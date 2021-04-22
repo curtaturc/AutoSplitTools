@@ -8,8 +8,8 @@ Supports v1.1 (for 7 Card runs) and v2.0+ (for 10 Card runs).
 ## Instructions
 * open your split file (any category) and right-click "LiveSplit" > "Edit Splits..."
 * set your game name to "A Proof of Concept"
-* click the "Activate" button bove your splits
-* if necessary, edit your settings
+* click the "Activate" button above your splits
+* check and edit the settings to your liking
 
 ## Game Links
 *Leaderboards: [speedrun.com/apoc](https://speedrun.com/apoc)*  

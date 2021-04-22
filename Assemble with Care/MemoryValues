@@ -1,0 +1,15 @@
+LevelFlowService: "mono-2.0-bdwgc.dll", 0x491A90, 0xD00,
+* 0x28 : LevelConfig,
+  * 0x20 : chapterNumber
+    * 0x14 : Value (string)
+
+* 0x40 : state (int) :
+         * 0 = Begin,
+         * 1 = InStartNarrative,
+         * 2 = Repairing,
+         * 3 = FinishedRepairing,
+         * 4 = LevelComplete,
+         * 5 = InEndNarrative,
+         * 6 = LeavingLevel,
+         * 7 = InPause,
+         * 8 = LoadingOut

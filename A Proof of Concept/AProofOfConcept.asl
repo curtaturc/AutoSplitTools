@@ -51,8 +51,8 @@ startup
 	for (int i = 0; i < Settings.GetLength(0); ++i)
 	{
 		string parent = Settings[i, 0];
-		string id = Settings[i, 1];
-		string desc = Settings[i, 2];
+		string id     = Settings[i, 1];
+		string desc   = Settings[i, 2];
 
 		settings.Add(id, false, desc, parent);
 	}

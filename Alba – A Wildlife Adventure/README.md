@@ -3,13 +3,13 @@
 Starts the timer when loading into the game.  
 Splits are available in the settings. Does not split upon the start of the credits.  
 Resets the timer when starting a new file or closing the game.  
-A completion tracker may be added in the future.
+Syncs to in-game time.
 
 ## Instructions
 * open your split file (any category) and right-click "LiveSplit" > "Edit Splits..."
 * set your game name to "Alba: A Wildlife Adventure"
-* click the "Activate" button bove your splits
-* if necessary, edit your settings
+* click the "Activate" button above your splits
+* check and edit the settings to your liking
 
 ## Game Links
 *Leaderboards: [speedrun.com/alba](https://speedrun.com/alba)*  
