@@ -1,6 +1,6 @@
 state("ThePed_Win_64")
 {
-	float speed: "UnityPlayer.dll", 0x144FBD8, 0x8, 0xA8, 0x28, 0x9C;
+	float Speed: "UnityPlayer.dll", 0x144FBD8, 0x8, 0xA8, 0x28, 0x9C;
 }
 
 startup
@@ -18,7 +18,7 @@ startup
 
 init
 {
-	string logPath = Environment.GetEnvironmentVariable("appdata")+"\\..\\LocalLow\\Skookum Arts\\The Pedestrian\\output_log.txt";
+	string logPath = Environment.GetEnvironmentVariable("appdata") + @"\..\LocalLow\Skookum Arts\The Pedestrian\output_log.txt";
 	try {
 		FileStream fs = new FileStream(logPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
 		fs.SetLength(0);
@@ -26,44 +26,44 @@ init
 	} catch {
 		print("Can't open Ped log");
 	}
-	vars.line = "";
-	vars.reader = new StreamReader(new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-	vars.finalSplit = 0;
+	vars.Line = String.Empty;
+	vars.Reader = new StreamReader(new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+	vars.FinalSplit = false;
 }
 
 update
 {
-	if (vars.reader == null) return false;
-	vars.line = vars.reader.ReadLine();
+	if (vars.Reader == null) return false;
+	vars.Line = vars.Reader.ReadLine();
 }
 
 start
 {
-	return old.speed == 0 && current.speed != 0;
+	return old.Speed == 0 && current.Speed != 0;
 }
 
 split
 {
-	if (vars.line != null && vars.line.StartsWith("Load Area "))
+	if (String.IsNullOrEmpty(vars.Line)) return;
+
+	if (vars.Line.StartsWith("Load Area "))
 	{
-		var AreaNumber = vars.line.Split(' ')[2];
-		print("got " + AreaNumber);
+		string AreaNumber = vars.Line.Split(' ')[2];
+		//print("got " + AreaNumber);
 		return (settings[AreaNumber]);
 	}
 
-	if (vars.line != null && vars.line.StartsWith("Machine Button!"))
-	{
-		vars.finalSplit = 1;
-	}
+	if (vars.Line.StartsWith("Machine Button!"))
+		vars.FinalSplit = true;
 
-	if (vars.line != null && vars.line.StartsWith("Audio trigger: Apartment_Music_Progress") && vars.finalSplit == 1)
+	if (vars.Line.StartsWith("Audio trigger: Apartment_Music_Progress") && vars.FinalSplit)
 	{
-		vars.finalSplit = 0;
+		vars.FinalSplit = false;
 		return true;
 	}
 }
- 
+
 exit
 {
-	vars.reader = null;
+	vars.Reader = null;
 }

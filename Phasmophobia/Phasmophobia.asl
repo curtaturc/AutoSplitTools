@@ -2,8 +2,8 @@ state("Phasmophobia") {}
 
 startup
 {
-	vars.sW = new Stopwatch();
-	vars.doOnTrue = (Func<bool, bool>) ((cond) => { if (cond) { vars.sW.Reset(); return true; } else return false; });
+	vars.Stopwatch = new Stopwatch();
+	vars.DoOnTrue = (Func<bool, bool>) ((cond) => { if (cond) { vars.Stopwatch.Reset(); return true; } else return false; });
 
 	settings.Add("header", true, "Split ONLY when these conditions are met, reset if not:");
 		settings.Add("miss", true, "Objectives must be completed", "header");
@@ -12,7 +12,7 @@ startup
 
 init
 {
-	vars.sW.Start();
+	vars.Stopwatch.Start();
 	// SigScan code by 2838.
 	Func<IntPtr, int, int, IntPtr> getPointerFromOpcode = (ptr, trgOperandOffset, totalSize) =>
 	{
@@ -40,10 +40,10 @@ init
 		levelValuesPtr = getPointerFromOpcode(assemblyScanner.Scan(levelValuesSig), 3, 7);
 		levelControllerPtr = getPointerFromOpcode(assemblyScanner.Scan(levelControllerSig), 3, 7);
 		vars.sigsFound = new[]{levelValuesPtr, levelControllerPtr}.All(x => x != IntPtr.Zero);
-		if (vars.sW.ElapsedMilliseconds >= 15000)
+		if (vars.Stopwatch.ElapsedMilliseconds >= 15000)
 		{
 			MessageBox.Show("Could not find pointers because the signatures aren't unique!", "Phasmophobia Auto Splitter", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-			vars.sW.Reset();
+			vars.Stopwatch.Reset();
 			break;
 		}
 	}
@@ -78,8 +78,8 @@ update
 	vars.evid = new[] {vars.evidence1Index.Current, vars.evidence2Index.Current, vars.evidence3Index.Current, vars.ghostTypeIndex.Current}.All(x => x != 0);
 	current.phase = timer.CurrentPhase;
 
-	if (!vars.isLoadingBackToMenu.Old && vars.isLoadingBackToMenu.Current) vars.sW.Start();
-	if (old.phase != TimerPhase.NotRunning && current.phase == TimerPhase.NotRunning) vars.sW.Reset();
+	if (!vars.isLoadingBackToMenu.Old && vars.isLoadingBackToMenu.Current) vars.Stopwatch.Start();
+	if (old.phase != TimerPhase.NotRunning && current.phase == TimerPhase.NotRunning) vars.Stopwatch.Reset();
 }
 
 start
@@ -89,21 +89,21 @@ start
 
 split
 {
-	if (vars.sW.ElapsedMilliseconds >= 8967)
+	if (vars.Stopwatch.ElapsedMilliseconds >= 8967)
 	{
-		if (!settings["evid"] && !settings["miss"]) return vars.doOnTrue(true);
+		if (!settings["evid"] && !settings["miss"]) return vars.DoOnTrue(true);
 
-		if (vars.isTutorial.Current) return vars.doOnTrue(vars.evid && settings["evid"]);
-		else return vars.doOnTrue(vars.evid && settings["evid"] || vars.miss && settings["miss"]);
+		if (vars.isTutorial.Current) return vars.DoOnTrue(vars.evid && settings["evid"]);
+		else return vars.DoOnTrue(vars.evid && settings["evid"] || vars.miss && settings["miss"]);
 	}
 }
 
 reset
 {
-	if (vars.sW.ElapsedMilliseconds >= 8982)
+	if (vars.Stopwatch.ElapsedMilliseconds >= 8982)
 	{
 		if (!settings["evid"]) return false;
-		if (vars.isTutorial.Current) return vars.doOnTrue(settings["evid"] && !vars.evid);
-		else return vars.doOnTrue(settings["evid"] && !vars.evid || settings["miss"] && !vars.miss);
+		if (vars.isTutorial.Current) return vars.DoOnTrue(settings["evid"] && !vars.evid);
+		else return vars.DoOnTrue(settings["evid"] && !vars.evid || settings["miss"] && !vars.miss);
 	}
 }

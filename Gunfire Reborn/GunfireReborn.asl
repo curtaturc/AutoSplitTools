@@ -50,7 +50,7 @@ init
 
 		Array.Reverse(bytes);
 		int offset = Convert.ToInt32(BitConverter.ToString(bytes).Replace("-",""),16);
-		IntPtr actualPtr = IntPtr.Add((ptr + totalSize), offset);
+		IntPtr actualPtr = IntPtr.Add(ptr + totalSize, offset);
 		return actualPtr;
 	};
 
@@ -59,10 +59,7 @@ init
 
 	var WarCacheSig = new SigScanTarget("48 8B 05 ???????? 48 8B 80 ???????? 33 C9 C6 00 01");
 	var GameUtilitySig = new SigScanTarget("48 8B 0D ???????? 0F 29 74 24 ?? F3 0F 10 73 ?? F6 81 27 01 ???? 02 74 ?? 83 B9 ???????? 00 75 ?? E8 ???????? 33 C9");
-
-	var WarCachePtr = IntPtr.Zero;
-	var SceneManagerPtr = IntPtr.Zero;
-	var GameUtilityPtr = IntPtr.Zero;
+	IntPtr WarCachePtr = IntPtr.Zero, SceneManagerPtr = IntPtr.Zero, GameUtilityPtr = IntPtr.Zero;
 
 	var Timeout = new Stopwatch();
 	vars.SigsFound = false;
@@ -70,10 +67,12 @@ init
 	Timeout.Start();
 	while (!vars.SigsFound)
 	{
-		WarCachePtr = PtrFromOpcode(AssemblyScanner.Scan(WarCacheSig), 3, 7);
-		SceneManagerPtr = PtrFromOpcode(AssemblyScanner.Scan(WarCacheSig) + 0x18, 3, 7);
-		GameUtilityPtr = PtrFromOpcode(AssemblyScanner.Scan(GameUtilitySig), 3, 7);
-		vars.SigsFound = new[] { WarCachePtr, SceneManagerPtr, GameUtilityPtr }.All(addr => addr != IntPtr.Zero);
+		vars.SigsFound = new[]
+		{
+			WarCachePtr = PtrFromOpcode(AssemblyScanner.Scan(WarCacheSig), 3, 7),
+			SceneManagerPtr = PtrFromOpcode(AssemblyScanner.Scan(WarCacheSig) + 0x18, 3, 7),
+			GameUtilityPtr = PtrFromOpcode(AssemblyScanner.Scan(GameUtilitySig), 3, 7)
+		}.All(addr => addr != IntPtr.Zero);
 		if (Timeout.ElapsedMilliseconds >= 5000) break;
 	}
 	Timeout.Reset();
@@ -112,11 +111,10 @@ start
 
 split
 {
+	bool finalSplit = current.Layer == 3 && current.Level == 4 && old.IsInWar && !current.IsInWar && old.HalfTime == current.HalfTime;
+
 	return old.Level != current.Level && settings[old.Layer + "-" + old.Level + "to" + current.Layer + "-" + current.Level] ||
-	       settings["finalSplit"] &&
-	       current.Layer == 3 && current.Level == 4 &&
-	       old.IsInWar && !current.IsInWar &&
-	       old.HalfTime == current.HalfTime;
+	       finalSplit &&settings["finalSplit"];
 }
 
 reset

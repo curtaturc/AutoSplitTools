@@ -1,50 +1,44 @@
 state("Where is 2018")
 {
-	int screen: 0x6A7F98;
+	int Screen: 0x6A7F98;
 }
 
 state("Where is 2019")
 {
-	int screen: 0x6B2D88;
+	int Screen: 0x6B2D88;
 }
 
 state("Where is 2020")
 {
-	int screen: 0x6C2DB8;
+	int Screen: 0x6C2DB8;
 }
 
 init
 {
 	switch (game.ProcessName)
 	{
-		case "Where is 2018": vars.game = 2018;
-		case "Where is 2019": vars.game = 2019;
-		case "Where is 2020": vars.game = 2020;
+		case "Where is 2018": vars.Game = 2018; break;
+		case "Where is 2019": vars.Game = 2019; break;
+		case "Where is 2020": vars.Game = 2020; break;
 	}
 
-	vars.screenChange = (Func(<int, int, bool>) ((old, curr) => old.screen == old && current.screen == curr ? true : false);
+	vars.ScreenChange = (Func<int, int, bool>) ((_old, _current) => old.Screen == _old && current.Screen == _current ? true : false);
+	vars.Exclude2019 = new List<int> { 8, 9, 38, 39, 41 };
 }
 
 start
 {
-	switch ((int)vars.game)
+	switch ((int)vars.Game)
 	{
-		case 2018: return vars.screenChange(2, 3);
-		case 2019: return vars.screenChange(3, 5);
-		case 2020: return vars.screenChange(3, 6);
+		case 2018: return vars.ScreenChange(2, 3);
+		case 2019: return vars.ScreenChange(3, 5);
+		case 2020: return vars.ScreenChange(3, 6);
 	}
-}
-
-reset
-{
-	return vars.game != 2016 &&
-	       (old.screen != 2 && current.screen == 2 ||
-	       old.screen != 0 && current.screen == 0);
 }
 
 split
 {
-	return vars.game == 2018 && old.screen != current.screen ||
-	       vars.game == 2019 && old.screen < current.screen && !(new[]{8, 9, 38, 39, 41}.Contains(old.screen)) ||
-	       vars.game == 2020 && old.screen < current.screen;
+	return vars.Game == 2018 && old.Screen != current.Screen ||
+	       vars.Game == 2019 && old.Screen < current.Screen && !vars.Exclude2019.Contains(old.Screen) ||
+	       vars.Game == 2020 && old.Screen < current.Screen;
 }

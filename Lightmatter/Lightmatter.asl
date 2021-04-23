@@ -25,52 +25,18 @@ startup
 		settings.Add(id, false, desc, parent);
 	}
 
-	vars.CreateTextComponent = (Func<string, string, LiveSplit.UI.Components.IComponent>) ((name, value) =>
-	{
-		foreach (dynamic component in timer.Layout.Components)
-		{
-			if (component.GetType().Name == "TextComponent" && component.Settings.Text1.Equals(name))
-			{
-				return component;
-			}
-		}
-
-		var textComponentAssembly = Assembly.LoadFrom("Components\\LiveSplit.Text.dll");
-		dynamic textComponent = Activator.CreateInstance(textComponentAssembly.GetType("LiveSplit.UI.Components.TextComponent"), timer);
-		timer.Layout.LayoutComponents.Add(new LiveSplit.UI.Components.LayoutComponent("LiveSplit.Text.dll", textComponent as LiveSplit.UI.Components.IComponent));
-		textComponent.Settings.Text1 = name;
-		textComponent.Settings.Text2 = value;
-		return textComponent;
-	});
-
-	vars.RemoveTextComponent = (Action<string>) ((text1) =>
-	{
-		int indexToRemove = -1;
-		foreach (dynamic component in timer.Layout.Components)
-		{
-			if (component.GetType().Name == "TextComponent" && component.Settings.Text1.Equals(text1))
-			{
-				indexToRemove = timer.Layout.Components.ToList().IndexOf(component);
-				break;
-			}
-		}
-
-		timer.Layout.LayoutComponents.RemoveAt(indexToRemove);
-	});
-
 	vars.VOFromPath = (Func<string, string>) ((path) =>
 	{
-		if (String.IsNullOrEmpty(input)) return "None";
-		else return input.Substring(input.LastIndexOf('/') + 1);
+		if (String.IsNullOrEmpty(path)) return "None";
+		else return path.Substring(path.LastIndexOf('/') + 1);
 	});
 }
 
 init
 {
 	#region Finding Pointers
-	IntPtr Player_Common, EventLogManager, FMod;
-	Player_Common = EventLogManager = FMod = IntPtr.Zero;
-	
+	IntPtr Player_Common = IntPtr.Zero, EventLogManager = IntPtr.Zero, FMod = IntPtr.Zero;
+
 	var Timeout = new Stopwatch();
 	vars.PtrsFound = false;
 
@@ -91,9 +57,7 @@ init
 		MessageBox.Show(
 			"Pointer scan timed out!\n" +
 			"Please contact Ero#1111 on Discord.",
-			"Lightmatter Autosplitter"
-		);
-
+			"Lightmatter Autosplitter");
 	}
 	else
 	{
@@ -108,39 +72,16 @@ init
 		vars.Watchers = new MemoryWatcherList { vars.StartVal, vars.LevelID, vars.MovSpeed, vars.LvlTime, vars.TotalTime, vars.VOPath, vars.PushCount };
 	}
 	#endregion
-
-	try
-	{
-		foreach (dynamic component in timer.Layout.Components)
-		{
-			if (component.GetType().Name == "TextComponent" && component.Settings.Text1.Equals("Recent VO:"))
-			{
-				vars.TextComponent = component;
-			}
-		}
-	}
-	catch
-	{
-		if (settings["showVO"] && vars.PtrsFound) vars.TextComponent = vars.CreateTextComponent("Recent VO:", "None");
-	}
 }
 
 update
 {
 	if (!vars.PtrsFound) return false;
 
-	if ((current.voSetting = settings["showVO"]) != old.voSetting)
-	{
-		if (current.voSetting) vars.TextComponent = vars.CreateTextComponent("Recent VO:", "None");
-		else vars.RemoveTextComponent("Recent VO:");
-	}
-
 	if (current.EventLogCheck == 0) return;
 	vars.Watchers.UpdateAll(game);
 
 	current.VoiceOver = vars.VOFromPath(vars.VOPath.Current);
-
-	try { if (current.voSetting) vars.TextComponent.Settings.Text2 = current.VoiceOver; } catch {}
 }
 
 start

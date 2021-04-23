@@ -42,9 +42,9 @@ startup
 
 update
 {
-	vars.inPos = (Func<float, float, float, float, bool>) ((xMin, xMax, yMin, yMax) => {
-		return current.xPos >= xMin && current.xPos <= xMax && current.yPos >= yMin && current.yPos <= yMax ? true : false;
-	});
+	vars.inPos = (Func<float, float, float, float, bool>) ((xMin, xMax, yMin, yMax) =>
+		current.xPos >= xMin && current.xPos <= xMax && current.yPos >= yMin && current.yPos <= yMax ? true : false
+	);
 
 	vars.ending = vars.inPos(-1000, -880, -885, -875) && current.mov == null;
 }
