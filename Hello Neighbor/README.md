@@ -1,4 +1,4 @@
-# Autosplitter for "Hello Neighbor"
+# Load Remover for "Hello Neighbor"
 ## Information
 Starts the timer when the player exits a cutscene.  
 Does not split.  

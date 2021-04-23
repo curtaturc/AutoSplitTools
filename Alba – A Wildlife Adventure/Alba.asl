@@ -158,11 +158,18 @@ init
 	}
 }
 
-start {
+update
+{
+	if (!vars.PointerResolved) return false;
+}
+
+start
+{
 	return old.IGT == 0.0 && current.IGT > 0.0;
 }
 
-split {
+split
+{
 	vars.CurrentAmount.UpdateAll(game);
 	foreach (var Task in vars.CurrentAmount)
 	{
@@ -175,14 +182,17 @@ split {
 	return current.ActiveStage == old.ActiveStage + 1 && settings["dayEnd"];
 }
 
-reset {
+reset
+{
 	return current.IGT == 0.0 && old.IGT > 0.0;
 }
 
-gameTime {
+gameTime
+{
 	return TimeSpan.FromSeconds(current.IGT);
 }
 
-isLoading {
+isLoading
+{
 	return true;
 }

@@ -3,18 +3,21 @@ state("Gunfire Reborn") {}
 startup
 {
 	vars.TimerModel = new TimerModel { CurrentState = timer };
-	var Stages = new Dictionary<int, string> {
+	var Stages = new Dictionary<int, string>
+	{
 		{1, "Longling Tomb"},
 		{2, "Anxi Desert"},
 		{3, "Duo Fjord"}
 	};
 
-	for (int stageID = 1; stageID <= Stages.Count; ++stageID) {
+	for (int stageID = 1; stageID <= Stages.Count; ++stageID)
+	{
 		int max = stageID == 1 ? 5 : 4;
 
 		settings.Add("layer" + stageID, true, "Split after completing a stage in " + Stages[stageID] + ":");
 
-		for (int levelID = 0; levelID <= max; ++levelID) {
+		for (int levelID = 0; levelID <= max; ++levelID)
+		{
 			if (stageID != 1 && levelID == 0)
 				settings.Add(stageID + "-0to" + stageID + "-1", false, Stages[stageID] + " Entrance", "layer" + stageID);
 			else if (levelID > 0 && levelID < max)
@@ -26,7 +29,8 @@ startup
 
 	settings.Add("finalSplit", true, "Duo Fjord Boss", "layer3");
 
-	if (timer.CurrentTimingMethod == TimingMethod.RealTime) {
+	if (timer.CurrentTimingMethod == TimingMethod.RealTime)
+	{
 		var Result = MessageBox.Show(
 			"Gunfire Reborn uses in-game time.\nWould you like to switch to it?",
 			"Gunfire Reborn Autosplitter",

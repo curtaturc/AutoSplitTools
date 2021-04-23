@@ -1,0 +1,10 @@
+LevelController : 0xB8, 0x0         * LevelValues : 0xB8, 0x0
+* 0x78 : JournalController,         * * 0x1A : isTutorial (bool),
+  * 0xD0  : evidence1Index (int),   * * 0x24 : miss1Completed (bool),
+  * 0xE0  : evidence2Index (int),   * * 0x25 : miss2Completed (bool),
+  * 0xF0  : evidence3Index (int),   * * 0x26 : miss3Completed (bool),
+  * 0x100 : ghostTypeIndex (int)    * * 0x27 : miss4Completed (bool)
+
+* 0x88 : GameController
+  * 0x68 : allPlayersAreConnected (bool),
+  * 0x69 : isLoadingBackToMenu (bool)
