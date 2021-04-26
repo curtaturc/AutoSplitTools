@@ -1,19 +1,19 @@
 state("Post Void")
 {
-	//double inGameScore : 0x128AE8, 0x50, 0x21C, 0x318, 0x0;
-	//double hitsTaken   : 0x4B2780, 0x2C, 0x10, 0x18, 0x40;
-	//double headshots   : 0x4B2780, 0x2C, 0x10, 0x18, 0x60;
-	//double shots       : 0x4B2780, 0x2C, 0x10, 0x18, 0x70;
-	//double hits        : 0x4B2780, 0x2C, 0x10, 0x18, 0x80;
-	//double kills       : 0x4B2780, 0x2C, 0x10, 0x18, 0xA0;
-	double IGTLvl      : 0x4B2780, 0x2C, 0x10, 0x18, 0xB0;
+	//double InGameScore : 0x128AE8, 0x50, 0x21C, 0x318, 0x0;
+	//double HitsTaken   : 0x4B2780, 0x2C, 0x10, 0x18, 0x40;
+	//double Headshots   : 0x4B2780, 0x2C, 0x10, 0x18, 0x60;
+	//double Shots       : 0x4B2780, 0x2C, 0x10, 0x18, 0x70;
+	//double Hits        : 0x4B2780, 0x2C, 0x10, 0x18, 0x80;
+	//double Kills       : 0x4B2780, 0x2C, 0x10, 0x18, 0xA0;
+	double IGTLevel    : 0x4B2780, 0x2C, 0x10, 0x18, 0xB0;
 	double IGTFull     : 0x4B2780, 0x2C, 0x10, 0x18, 0xC0;
 	double LevelID     : 0x4B2780, 0x2C, 0x10, 0x18, 0xE0;
 }
 
 startup
 {
-	vars.timerModel = new TimerModel {CurrentState = timer};
+	vars.TimerModel = new TimerModel {CurrentState = timer};
 
 	settings.Add("lvlSplits", true, "Choose which level(s) to split on:");
 		settings.Add("99to0", true, "After the Tutorial", "lvlSplits");
@@ -28,24 +28,24 @@ startup
 		settings.Add("8to9", true, "After Level 9", "lvlSplits");
 		settings.Add("9to10", true, "After Level 10", "lvlSplits");
 		settings.Add("finalSplit", true, "After Level 11", "lvlSplits");
+
+	vars.TimerStart = (EventHandler) ((s, e) => vars.FinalLevel = false);
+	timer.OnStart += vars.TimerStart;
+	vars.TimerStart(null, null);
 }
 
 start
 {
-	if (old.IGTFull == 0 && current.IGTFull > 0)
-	{
-		vars.finalLevel = false;
-		return true;
-	}
+	return old.IGTFull == 0 && current.IGTFull > 0;
 }
 
 split
 {
-	bool finalLevel = current.LevelID == 10 && old.IGTLvl == 0 && current.IGTLvl > 0;
+	if (current.LevelID == 10 && old.IGTLevel == 0 && current.IGTLevel > 0) vars.FinalLevel = true;
 
 	return
 		old.LevelID != current.LevelID && settings[old.LevelID + "to" + current.LevelID] ||
-		finalLevel && old.IGTLvl > 0 && current.IGTLvl == 0 && settings["finalSplit"];
+		vars.FinalLevel && old.IGTLevel > 0 && current.IGTLevel == 0 && settings["finalSplit"];
 }
 
 reset
@@ -65,5 +65,10 @@ isLoading
 
 exit
 {
-	if (timer.CurrentPhase != TimerPhase.Ended) vars.timerModel.Reset();
+	if (timer.CurrentPhase != TimerPhase.Ended) vars.TimerModel.Reset();
+}
+
+shutdown
+{
+	timer.OnStart -= vars.TimerStart;
 }
