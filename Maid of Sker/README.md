@@ -1,8 +1,8 @@
 # Autosplitter for "Maid of Sker"
 ## Information
 Starts the timer when picking up the first musical note.  
-Splits are available in the settings.  
-Does not reset the timer.  
+Splits are available in the settings. Does not split after choosing the final dialogue option.  
+Resets the timer when starting the opening cutscene.  
 Removes loading times.
 
 ## Instructions
