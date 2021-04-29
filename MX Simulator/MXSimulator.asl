@@ -2,17 +2,17 @@
 
 state("mx")
 {
-	int playerID         : "mx.exe", 0x26E894;
-	int playersInRace    : "mx.exe", 0x322A00;
+	int playerID         : "mx.exe", 0x26F234;
+	int playersInRace    : "mx.exe", 0x323220;
 
-	int firstLapCPs      : "mx.exe", 0x32094C;
-	int normalLapCPs     : "mx.exe", 0x320950;
+	int firstLapCPs      : "mx.exe", 0x17234C;
+	int normalLapCPs     : "mx.exe", 0x172350;
 
 	//double tickRate      : "mx.exe", 0x162B90;
-	int raceTicks        : "mx.exe", 0x321AE0;
+	int raceTicks        : "mx.exe", 0x322300;
 	//int serverStartTicks : "mx.exe", 0x43248A0;
 
-	string512 trackName  : "mx.exe", 0x31E4F0, 0x0;
+	string512 trackName  : "mx.exe", 0x31ED10, 0x0;
 }
 
 startup
@@ -59,12 +59,12 @@ init
 			IntPtr ptr = IntPtr.Zero;
 			for (int i = 0; i < current.playersInRace; ++i)
 			{
-				vars.idWatcher = new MemoryWatcher<int>(new DeepPointer("mx.exe", 0x322280 + 0xC * i));
+				vars.idWatcher = new MemoryWatcher<int>(new DeepPointer("mx.exe", 0x322AA0 + 0xC * i));
 				vars.idWatcher.Update(game);
 
 				if (vars.idWatcher.Current == current.playerID)
 				{
-					vars.checkpointWatcher = new MemoryWatcher<int>(new DeepPointer("mx.exe", 0x322284 + 0xC * i));
+					vars.checkpointWatcher = new MemoryWatcher<int>(new DeepPointer("mx.exe", 0x322AA4 + 0xC * i));
 					break;
 				}
 			}
