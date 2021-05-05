@@ -17,5 +17,4 @@ Resets the timer when that's not the case.
 *Game: [s.team/a/739630](https://s.team/a/739630) ($13.99)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* 🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡
+If there are issues, please do not contact me.
