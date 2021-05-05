@@ -18,4 +18,4 @@ Resets the timer when that's not the case.
 
 ---
 If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+* 🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡🤡
