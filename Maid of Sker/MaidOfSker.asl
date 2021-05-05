@@ -3,7 +3,6 @@ state("Maid of Sker") {}
 startup
 {
 	vars.CollectedItems = new HashSet<string>();
-	vars.AdditionalPauses = new HashSet<string> { "MOS_LVL_LoadingScreen", "MOS_LVL_PersistentScene" };
 
 	string[,] Settings =
 	{
@@ -70,29 +69,32 @@ init
 		return IntPtr.Add(ptr + totalSize, offset);
 	};
 
-	SigScanTarget SceneManagerSig = new SigScanTarget("48 8B 0D ???????? 48 8D 55 ?? 89 45 ?? 0F B6 85");
-	SceneManagerSig.OnFound = (p, s, ptr) => PtrFromOpcode(ptr, 3, 7);
-	SigScanTarget InventoryManagerSig = new SigScanTarget("48 8B 05 ???????? 48 8B 88 ???????? 48 8B 09 48 85 D2 74");
-	InventoryManagerSig.OnFound = (p, s, ptr) => PtrFromOpcode(ptr, 3, 7);
-	SigScanTarget PlayerControllerSig = new SigScanTarget("48 8B 05 ???????? 4C 89 B4 24 ???????? 0F 29 B4 24");
-	PlayerControllerSig.OnFound = (p, s, ptr) => PtrFromOpcode(ptr, 3, 7);
+	var SceneManagerSig = new SigScanTarget("48 8B 0D ???????? 48 8D 55 ?? 89 45 ?? 0F B6 85");
+	var InventoryManagerSig = new SigScanTarget("48 8B 05 ???????? 48 8B 88 ???????? 48 8B 09 48 85 D2 74");
+	var PlayerControllerSig = new SigScanTarget("48 8B 05 ???????? 4C 89 B4 24 ???????? 0F 29 B4 24");
+	var LoadClassSig = new SigScanTarget("48 8B 05 ???????? 48 89 08 48 8D 05 76 2C 3B 01");
 
-	IntPtr SceneManager = IntPtr.Zero, InventoryManager = IntPtr.Zero, PlayerController = IntPtr.Zero;
+	foreach (var sig in new[] { SceneManagerSig, InventoryManagerSig, PlayerControllerSig, LoadClassSig })
+		sig.OnFound = (p, s, ptr) => PtrFromOpcode(ptr, 3, 7);
+
+	IntPtr SceneManager = IntPtr.Zero, InventoryManager = IntPtr.Zero, PlayerController = IntPtr.Zero, LoadClass = IntPtr.Zero;
 
 	int iteration = 0;
 	while (iteration++ < 50)
 	{
 		SceneManager = UnityPlayerScanner.Scan(SceneManagerSig);
+		LoadClass = UnityPlayerScanner.Scan(LoadClassSig);
 		InventoryManager = GameAssemblyScanner.Scan(InventoryManagerSig);
 		PlayerController = GameAssemblyScanner.Scan(PlayerControllerSig);
 
-		if (vars.SigsFound = new[] { SceneManager, InventoryManager, PlayerController }.All(addr => addr != IntPtr.Zero)) break;
+		if (vars.SigsFound = new[] { SceneManager, InventoryManager, PlayerController, LoadClass }.All(addr => addr != IntPtr.Zero)) break;
 	}
 
 	if (!vars.SigsFound) return;
 
 	var InventorySize = new MemoryWatcher<int>(new DeepPointer(InventoryManager, 0xB8, 0x0, 0x28, 0x18));
 	vars.CutsceneStartTime = new MemoryWatcher<float>(new DeepPointer(PlayerController, 0xB8, 0x0, 0xE0, 0x108));
+	vars.Loading = new MemoryWatcher<bool>(new DeepPointer(LoadClass, 0x1C8, 0xD0, 0x698, 0x50));
 	#endregion
 
 	#region UpdateFunctions
@@ -137,6 +139,7 @@ update
 	vars.UpdateScenes();
 	vars.UpdateInventoryItems();
 	vars.CutsceneStartTime.Update(game);
+	vars.Loading.Update(game);
 
 	if (current.ThisScene == "MOS_LVL_GroundFloor" && vars.CutsceneStartTime.Old == -1 && vars.CutsceneStartTime.Current > 0) ++current.CutsceneNum;
 }
@@ -165,8 +168,7 @@ reset
 
 isLoading
 {
-	return current.ThisScene != current.NextScene ||
-	       vars.AdditionalPauses.Contains(current.ThisScene);
+	return vars.Loading.Current;
 }
 
 shutdown
