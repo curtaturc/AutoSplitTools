@@ -18,5 +18,4 @@ Syncs to in-game time. Pauses the timer when the player dies in any stage before
 *Game: [s.team/a/1217060](https://s.team/a/1217060) ($11.99)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

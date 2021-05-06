@@ -18,5 +18,4 @@ Removes loading times.
 *Game: [s.team/a/826940](https://s.team/a/826940) ($24.99)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

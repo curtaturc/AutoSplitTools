@@ -16,5 +16,4 @@ Resets the timer when the player clears the file (level 1 must have been complet
 *Game: [s.team/a/745250](https://s.team/a/745250) ($1.99)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

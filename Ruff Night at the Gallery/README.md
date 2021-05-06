@@ -14,5 +14,4 @@ Resets the timer when returning to the menu.
 *Game: [s.team/a/1463470](https://s.team/a/1463470) (Free)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

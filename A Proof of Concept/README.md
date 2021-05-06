@@ -17,5 +17,4 @@ Supports v1.1 (for 7 Card runs) and v2.0+ (for 10 Card runs).
 *Game: [bill-g.itch.io/a-proof-of-concept](https://bill-g.itch.io/a-proof-of-concept) (Free)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

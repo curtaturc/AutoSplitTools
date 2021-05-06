@@ -17,4 +17,4 @@ Resets the timer when that's not the case.
 *Game: [s.team/a/739630](https://s.team/a/739630) ($13.99)*
 
 ---
-If there are issues, please do not contact me.
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

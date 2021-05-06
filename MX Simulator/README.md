@@ -15,4 +15,4 @@ Syncs to in-game time.
 *Website: [mxsimulator.com](https://mxsimulator.com)*
 
 ---
-If there are issues, please do not contact me. This game is awful to work with.
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

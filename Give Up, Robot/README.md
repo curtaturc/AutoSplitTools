@@ -16,5 +16,4 @@ Syncs to in-game time.
 *Discord: [discord.gg/AEXM9dJyvy](https://discord.gg/AEXM9dJyvy)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

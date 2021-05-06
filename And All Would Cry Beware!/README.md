@@ -15,5 +15,4 @@ Does not reset the timer.
 *Game: [s.team/a/1071510](https://s.team/a/1071510) ($9.99)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.

@@ -18,5 +18,4 @@ This autosplitter additionally logs successful and failed missions to a file, co
 *Game: [s.team/a/686200](https://s.team/a/686200) ($13.99)*
 
 ---
-If there are issues, please contact one of the authors of the script:  
-* Ero#1111 on Discord
+If there are issues, please [create a new issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose) here on GitHub.
