@@ -59,23 +59,13 @@ init
 	SignatureScanner UnityPlayerScanner = new SignatureScanner(game, UnityPlayer.BaseAddress, UnityPlayer.ModuleMemorySize);
 	SignatureScanner GameAssemblyScanner = new SignatureScanner(game, GameAssembly.BaseAddress, GameAssembly.ModuleMemorySize);
 
-	Func<IntPtr, int, int, IntPtr> PtrFromOpcode = (ptr, targetOperandOffset, totalSize) =>
-	{
-		byte[] bytes = game.ReadBytes(ptr + targetOperandOffset, 4);
-		if (bytes == null) return IntPtr.Zero;
-
-		Array.Reverse(bytes);
-		int offset = Convert.ToInt32(BitConverter.ToString(bytes).Replace("-", ""), 16);
-		return IntPtr.Add(ptr + totalSize, offset);
-	};
-
 	var SceneManagerSig = new SigScanTarget("48 8B 0D ???????? 48 8D 55 ?? 89 45 ?? 0F B6 85");
 	var InventoryManagerSig = new SigScanTarget("48 8B 05 ???????? 48 8B 88 ???????? 48 8B 09 48 85 D2 74");
 	var PlayerControllerSig = new SigScanTarget("48 8B 05 ???????? 4C 89 B4 24 ???????? 0F 29 B4 24");
-	var LoadClassSig = new SigScanTarget("48 8B 05 ???????? 48 89 08 48 8D 05 76 2C 3B 01");
+	var LoadClassSig = new SigScanTarget("48 8B 15 ???????? 45 33 C9 4D 8B C6 48 8B CB");
 
 	foreach (var sig in new[] { SceneManagerSig, InventoryManagerSig, PlayerControllerSig, LoadClassSig })
-		sig.OnFound = (p, s, ptr) => PtrFromOpcode(ptr, 3, 7);
+		sig.OnFound = (p, s, ptr) => IntPtr.Add(ptr + 7, game.ReadValue<int>(ptr + 3));
 
 	IntPtr SceneManager = IntPtr.Zero, InventoryManager = IntPtr.Zero, PlayerController = IntPtr.Zero, LoadClass = IntPtr.Zero;
 
@@ -83,7 +73,7 @@ init
 	while (iteration++ < 50)
 	{
 		SceneManager = UnityPlayerScanner.Scan(SceneManagerSig);
-		LoadClass = UnityPlayerScanner.Scan(LoadClassSig);
+		LoadClass = GameAssemblyScanner.Scan(LoadClassSig);
 		InventoryManager = GameAssemblyScanner.Scan(InventoryManagerSig);
 		PlayerController = GameAssemblyScanner.Scan(PlayerControllerSig);
 
@@ -94,7 +84,7 @@ init
 
 	var InventorySize = new MemoryWatcher<int>(new DeepPointer(InventoryManager, 0xB8, 0x0, 0x28, 0x18));
 	vars.CutsceneStartTime = new MemoryWatcher<float>(new DeepPointer(PlayerController, 0xB8, 0x0, 0xE0, 0x108));
-	vars.Loading = new MemoryWatcher<bool>(new DeepPointer(LoadClass, 0x1C8, 0xD0, 0x698, 0x50));
+	vars.Loading = new MemoryWatcher<bool>(new DeepPointer(LoadClass, 0x350, 0x28, 0x70));
 	#endregion
 
 	#region UpdateFunctions
