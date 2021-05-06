@@ -32,7 +32,7 @@ If there is any especially weird behavior with the timer, please describe what i
 (*for experienced users only*)
 
 Do you know the exact cause of the problem? Broken pointers, signatures can't be resolved, level names changed? Please elaborate.  
-Do you already have a fix? Please give me a merge request with your proposed changes. You will be properly credited.
+Do you already have a fix? Please pull request this repository with your proposed changes. You will be properly credited.
 
 ---
 ## *Common Issues*
