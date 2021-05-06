@@ -28,7 +28,7 @@ Bad: I want the timer to stop when the run is over..., I want the timer to split
 * Game name: 
 * Download/store link (+ price if applicable): 
 
-*Features*:
+*Features*:  
 [ ] Start: Describe an event or events upon which the timer should start.  
 [ ] Split: Describe an event or events upon which the timer should split.  
 [ ] Reset: Describe an event or events upon which the timer should reset.  
