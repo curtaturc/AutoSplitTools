@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-For rates and other information, please refer to my commission info [here]().  
+For rates and other information, please refer to my commission info [here](https://github.com/just-ero/AutoSplitTools#commission-information).  
 [ ] I have read and understood these terms.
 
 ---
