@@ -54,8 +54,8 @@ startup
 init
 {
 	#region SigScans
-	ProcessModuleWow64Safe UnityPlayer = game.ModulesWow64Safe().FirstOrDefault(x => x.ModuleName == "UnityPlayer.dll");
-	ProcessModuleWow64Safe GameAssembly = game.ModulesWow64Safe().FirstOrDefault(x => x.ModuleName == "GameAssembly.dll");
+	ProcessModuleWow64Safe UnityPlayer = modules.Single(m => m.ModuleName == "UnityPlayer.dll");
+	ProcessModuleWow64Safe GameAssembly = modules.Single(m => m.ModuleName == "GameAssembly.dll");
 	SignatureScanner UnityPlayerScanner = new SignatureScanner(game, UnityPlayer.BaseAddress, UnityPlayer.ModuleMemorySize);
 	SignatureScanner GameAssemblyScanner = new SignatureScanner(game, GameAssembly.BaseAddress, GameAssembly.ModuleMemorySize);
 
