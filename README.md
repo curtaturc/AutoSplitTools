@@ -1,7 +1,7 @@
 Pull requests are welcome.
 
 ## *Common Auto Splitter Issues*
-If you're having a problem with one of my auto splitters, please check some of the common issues below. If your problem is not listed, please create [a GitHub issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose).
+If you're having a problem with one of my auto splitters, please check some of the common issues below. If your problem is not listed, please create [a GitHub issue](https://github.com/just-ero/AutoSplitTools/issues/new/choose).  
 *Only load removal / game time sync is broken, everything else works*: Please make sure you are comparing against Game Time within LiveSplit.  
 *The auto splitter cannot be activated from the splits editor*: Try launching LiveSplit as administrator. If the issue persists after that, it is a bug on LiveSplit's side.
 
