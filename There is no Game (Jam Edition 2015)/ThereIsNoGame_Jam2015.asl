@@ -26,7 +26,8 @@ startup
 	vars.SplitDialogues = new Dictionary<float, string>
 	{
 		{ 2.208752632f, "Mute the developer for the 3rd time" },
-		{ 2.779047489f, "Free the goat" }
+		{ 2.779047489f, "Free the goat" },
+		{ 1.221632719f, "Trade the squirrel a nut for the key" }
 	};
 
 	vars.DoneWords = new List<string>();
