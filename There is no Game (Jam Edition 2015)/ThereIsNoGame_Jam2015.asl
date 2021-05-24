@@ -17,7 +17,7 @@ startup
 		settings.Add("TREE", false, "TREE", "THERE IS A");
 		settings.Add("GOAT", false, "GOAT", "THERE IS A");
 		settings.Add("GAME", true, "GAME", "THERE IS A");
-	settings.Add("Beat BreakOut minigame");
+	settings.Add("Reach 3000 points in BreakOut (glitches)");
 	settings.Add("Grow tree all the way");
 	settings.Add("Trade the squirrel a nut for the key", false);
 	settings.Add("Free the goat", false);
@@ -26,7 +26,8 @@ startup
 	vars.SplitDialogues = new Dictionary<float, string>
 	{
 		{ 2.208752632f, "Mute the developer for the 3rd time" },
-		{ 2.779047489f, "Free the goat" }
+		{ 2.779047489f, "Free the goat" },
+		{ 1.221632719f, "Trade the squirrel a nut for the key" }
 	};
 
 	vars.DoneWords = new List<string>();
@@ -68,8 +69,8 @@ start
 
 split
 {
-	if (old.BrickScore == 4300 && current.BrickScore == 4400)
-		return settings["Beat BreakOut minigame"];
+	if (old.BrickScore == 2900 && current.BrickScore == 3000)
+		return settings["Reach 3000 points in BreakOut (glitches)"];
 
 	if (old.TreeState == 2 && current.TreeState == 3)
 		return settings["Grow tree all the way"];
