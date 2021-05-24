@@ -129,7 +129,6 @@ startup
 		else settings.Add(id, true, desc, parent);
 	}
 
-
 	vars.TimerStart = (EventHandler) ((s, e) =>
 	{
 		string fileName = "DKAS_ILTimes.log";
@@ -145,17 +144,17 @@ startup
 
 init
 {
-	vars.Log = (Action<string>) (successOrFailed => {
+	vars.Log = (Action<string>) (successOrFailed =>
+	{
 		string fileName = "DKAS_ILTimes.log";
 		var logWriter = File.AppendText(fileName);
 
 		string output =
-			(current.chapter + 1) + "-" + (current.level + 1).ToString("00") + ": " +
-			"MISSION " + successOrFailed + " at " + TimeSpan.FromSeconds(current.levelRunTime).ToString(@"mm\:ss\.fff") +
-			" (Hostages: " + current.hostagesSaved + "/" + current.hostagesTotal + ", Arrest Targets: " + current.targetsArrested + "/" + current.targetsTotal + ")";
+			(current.Chapter + 1) + "-" + (current.Level + 1).ToString("00") + ": " +
+			"MISSION " + successOrFailed + " at " + TimeSpan.FromSeconds(current.LevelRunTime).ToString(@"mm\:ss\.fff") +
+			" (Hostages: " + current.HostagesSaved + "/" + current.HostagesTotal + ", Arrest Targets: " + current.TargetsArrested + "/" + current.TargetsTotal + ")";
 
 		logWriter.WriteLine(output);
-
 		logWriter.Close();
 
 		if (new FileInfo(fileName).Length >= 500000)
@@ -187,7 +186,7 @@ reset
 {
 	if (old.LevelEndTime == 0 && current.LevelEndTime > 0 && old.LevelState == 0 && current.LevelState == 2)
 	{
-		vars.Log("FAILED ");
+		vars.Log("FAILED");
 
 		return settings["ilTimer"];
 	}
