@@ -2,11 +2,17 @@ state("Phasmophobia") {}
 
 startup
 {
-	vars.Dbg = (Action<dynamic>) ((output) => print("[Phasmophobia ASL] " + output.ToString()));
+	vars.Dbg = (Action<dynamic>) ((output) => print("[Phasmophobia ASL] " + output));
 
 	settings.Add("header", true, "Split when these conditions are fulfilled, reset if not:");
 		settings.Add("miss", true, "All objectives are completed", "header");
 		settings.Add("evid", true, "All evidences and the ghost type are set", "header");
+
+	vars.Stopwatch = new Stopwatch();
+	vars.TimerSplit = (EventHandler) ((s, e) => vars.Stopwatch.Reset());
+	vars.TimerReset = (LiveSplit.Model.Input.EventHandlerT<TimerPhase>) ((s, e) => vars.Stopwatch.Reset());
+	timer.OnSplit += vars.TimerSplit;
+	timer.OnReset += vars.TimerReset;
 }
 
 init
@@ -100,17 +106,6 @@ init
 
 	vars.AllEvidenceSet = false;
 	vars.AllMissionsDone = false;
-	vars.Stopwatch = new Stopwatch();
-	vars.DoOnTrue = (Func<bool, bool>) ((condition) =>
-	{
-		if (condition)
-		{
-			vars.Stopwatch.Reset();
-			return true;
-		}
-
-		return false;
-	});
 }
 
 update
@@ -120,26 +115,22 @@ update
 	vars.Watchers.UpdateAll(game);
 	vars.UpdateScenes();
 
-	vars.AllEvidenceSet = new[]
-	{
+	vars.AllEvidenceSet = new[] {
 		vars.Watchers["E1Index"].Current,
 		vars.Watchers["E2Index"].Current,
 		vars.Watchers["E3Index"].Current,
 		vars.Watchers["GhostIndex"].Current
 	}.All(i => i > 0);
 
-	vars.AllMissionsDone = new[]
-	{
+	vars.AllMissionsDone = new[] {
 		vars.Watchers["M1Complete"].Current,
 		vars.Watchers["M2Complete"].Current,
 		vars.Watchers["M3Complete"].Current,
 		vars.Watchers["M4Complete"].Current
 	}.All(m => m == true);
 
-	if (!vars.Watchers["LoadingBackToMenu"].Old && vars.Watchers["LoadingBackToMenu"].Current) {
-		vars.Dbg("yo shit");
+	if (!vars.Watchers["LoadingBackToMenu"].Old && vars.Watchers["LoadingBackToMenu"].Current)
 		vars.Stopwatch.Start();
-	}
 }
 
 start
@@ -151,19 +142,17 @@ split
 {
 	if (vars.Stopwatch.ElapsedMilliseconds >= 8950)
 	{
-		if (!settings["evid"] && !settings["miss"]) return vars.DoOnTrue(true);
+		if (!settings["evid"] && !settings["miss"]) return true;
 
-		return vars.DoOnTrue(vars.AllEvidenceSet && settings["evid"] || vars.AllMissionsDone && settings["miss"]);
+		return vars.AllEvidenceSet && settings["evid"] || vars.AllMissionsDone && settings["miss"];
 	}
 }
 
 reset
 {
-	if (vars.Stopwatch.ElapsedMilliseconds >= 8950)
+	if (vars.Stopwatch.ElapsedMilliseconds >= 8967)
 	{
-		if (!settings["evid"]) return false;
-
-		return vars.DoOnTrue(!vars.AllEvidenceSet && settings["evid"] || !vars.AllMissionsDone && settings["miss"]);
+		return !vars.AllEvidenceSet && settings["evid"] || !vars.AllMissionsDone && settings["miss"];
 	}
 }
 
@@ -180,4 +169,6 @@ exit
 shutdown
 {
 	vars.TokenSource.Cancel();
+	timer.OnSplit -= vars.TimerSplit;
+	timer.OnReset -= vars.TimerReset;
 }
