@@ -1,5 +1,5 @@
 ---
-name: An auto splitter needs fixes!
+name: An autosplitter needs fixes!
 about: Help me help you by providing me with some helpful information.
 title: "[GAME NAME] autosplitter does not [start, split, reset, remove loads, sync
   to game time]"
