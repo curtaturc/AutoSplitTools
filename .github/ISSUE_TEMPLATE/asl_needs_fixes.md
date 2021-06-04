@@ -1,7 +1,7 @@
 ---
 name: An auto splitter needs fixes!
 about: Help me help you by providing me with some helpful information.
-title: "[GAME NAME] auto splitter does not [start, split, reset, remove loads, sync
+title: "[GAME NAME] autosplitter does not [start, split, reset, remove loads, sync
   to game time]"
 labels: ''
 assignees: ''
