@@ -2,7 +2,7 @@
 <script>
     <init>
 	vars.TokenSource = new CancellationTokenSource();
-	vars.MonoFinder = new Thread(() =&gt;
+	vars.MonoFinder = new Thread(() =>
 	{
 		vars.Dbg("Starting mono scan thread.");
 
@@ -11,10 +11,10 @@
 
 		SignatureScanner MonoScanner = null;
 		var mono_image_loaded = new SigScanTarget(2, "FF 35 ???????? E8 ???????? 83 C4 08 8B F0 83 3D ???????? 00");
-		mono_image_loaded.OnFound = (p, s, ptr) =&gt; p.ReadPointer(ptr);
+		mono_image_loaded.OnFound = (p, s, ptr) => p.ReadPointer(ptr);
 		IntPtr loaded_images = IntPtr.Zero, Asm_Cs_image = IntPtr.Zero;
 
-		vars.Mono = new Dictionary&lt;string, Dictionary&lt;string, IntPtr&gt;&gt;();
+		vars.Mono = new Dictionary<string, Dictionary&lt;string, IntPtr&gt;&gt;();
 
 		var Token = vars.TokenSource.Token;
 		while (!Token.IsCancellationRequested)
