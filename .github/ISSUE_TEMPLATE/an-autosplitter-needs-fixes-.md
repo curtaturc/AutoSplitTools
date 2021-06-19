@@ -1,7 +1,7 @@
 ---
-name: An auto splitter needs fixes!
+name: An autosplitter needs fixes!
 about: Help me help you by providing me with some helpful information.
-title: "[GAME NAME] auto splitter does not [start, split, reset, remove loads, sync
+title: "[GAME NAME] autosplitter does not [start, split, reset, remove loads, sync
   to game time]"
 labels: ''
 assignees: ''
@@ -12,8 +12,8 @@ Please refer to the [common issues](https://github.com/just-ero/AutoSplitTools#c
 
 ---
 ## *Describe your Issue*
-[ ] The game has recently received an update
-[ ] The features mentioned in the title outright do not work  
+- [ ] The game has recently received an update
+- [ ] The features mentioned in the title outright do not work  
 If there is any especially weird behavior with the timer, please describe what is happening:  
 
 
