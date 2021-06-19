@@ -1,35 +1,33 @@
-// This needs to be made into a goddamn component. This game is so shit.
-
 state("mx")
 {
-	int playerID         : "mx.exe", 0x26F234;
-	int playersInRace    : "mx.exe", 0x323220;
+	int PlayerID         : 0x26F234;
+	int PlayersInRace    : 0x323220;
 
-	int firstLapCPs      : "mx.exe", 0x17234C;
-	int normalLapCPs     : "mx.exe", 0x172350;
+	int FirstLapCPs      : 0x17234C;
+	int NormalLapCPs     : 0x172350;
 
-	//double tickRate      : "mx.exe", 0x162B90;
-	int raceTicks        : "mx.exe", 0x322300;
-	//int serverStartTicks : "mx.exe", 0x43248A0;
+	//double TickRate      : 0x162B90;
+	int RaceTicks        : 0x322300;
+	//int ServerStartTicks : 0x43248A0;
 
-	string512 trackName  : "mx.exe", 0x31ED10, 0x0;
+	string512 TrackName  : 0x31ED10, 0x0;
 }
 
 startup
 {
-	vars.timerModel = new TimerModel { CurrentState = timer };
+	vars.TimerModel = new TimerModel { CurrentState = timer };
 
-	vars.timerStart = (EventHandler) ((s, e) => vars.validLap = true);
-	timer.OnStart += vars.timerStart;
+	vars.TimerStart = (EventHandler) ((s, e) => vars.ValidLap = true);
+	timer.OnStart += vars.TimerStart;
 
 	if (timer.CurrentTimingMethod == TimingMethod.RealTime)
 	{
-		var Result = MessageBox.Show(
+		var result = MessageBox.Show(
 			"MX Simulator uses in-game time.\nWould you like to switch to it?",
 			"MX Simulator Autosplitter",
 			MessageBoxButtons.YesNo);
 
-		if (Result == DialogResult.Yes) timer.CurrentTimingMethod = TimingMethod.GameTime;
+		if (result == DialogResult.Yes) timer.CurrentTimingMethod = TimingMethod.GameTime;
 	}
 }
 
@@ -38,13 +36,13 @@ init
 	#region Initializing Variables
 	current.CPs = 0;
 	current.id = 0;
-	vars.startTicks = 0;
+	vars.StartTicks = 0;
 
 	vars.CPsChanged = false;
-	vars.onFinalSplit = false;
-	vars.onFirstCP = false;
-	vars.validLap = true;
-	vars.showMsg = false;
+	vars.OnFinalSplit = false;
+	vars.OnFirstCP = false;
+	vars.ValidLap = true;
+	vars.ShowMsg = false;
 
 	vars.checkpointWatcher = (MemoryWatcher<int>)null;
 	vars.idWatcher = (MemoryWatcher<int>)null;
@@ -52,19 +50,18 @@ init
 
 	#region Custom Functions
 	// Whenever the player's position changes in a race (ghost in time trials counts too), the checkpoint memory address needs to be updated.
-	vars.updateWatchers = (Action) (() =>
+	vars.UpdateWatchers = (Action) (() =>
 	{
-		if (current.playersInRace > 0)
+		if (current.PlayersInRace > 0)
 		{
-			IntPtr ptr = IntPtr.Zero;
-			for (int i = 0; i < current.playersInRace; ++i)
+			for (int i = 0; i < current.PlayersInRace; ++i)
 			{
-				vars.idWatcher = new MemoryWatcher<int>(new DeepPointer("mx.exe", 0x322AA0 + 0xC * i));
+				vars.idWatcher = new MemoryWatcher<int>(new DeepPointer(0x322AA0 + 0xC * i));
 				vars.idWatcher.Update(game);
 
-				if (vars.idWatcher.Current == current.playerID)
+				if (vars.idWatcher.Current == current.PlayerID)
 				{
-					vars.checkpointWatcher = new MemoryWatcher<int>(new DeepPointer("mx.exe", 0x322AA4 + 0xC * i));
+					vars.checkpointWatcher = new MemoryWatcher<int>(new DeepPointer(0x322AA4 + 0xC * i));
 					break;
 				}
 			}
@@ -72,15 +69,14 @@ init
 	});
 
 	// A message box to pop up when the current number of splits or track name doesn't line up with the currently loaded track.
-	vars.message = (Action) (() =>
+	vars.TrackMsg = (Action) (() =>
 	{
-		bool hasLoaded = false;
 		DialogResult result = DialogResult.None;
 
-		if (!String.IsNullOrEmpty(current.trackName) && (current.normalLapCPs > 0 && timer.Run.Count != current.normalLapCPs || timer.Run.CategoryName != current.trackName)) {
+		if (!String.IsNullOrEmpty(current.TrackName) && (current.NormalLapCPs > 0 && timer.Run.Count != current.NormalLapCPs || timer.Run.CategoryName != current.TrackName)) {
 			result = MessageBox.Show(
 				"Current splits configuration:\n" + "\"" + timer.Run.CategoryName + "\" with " + timer.Run.Count + " segments\n\n" +
-				"Required configuration:\n" + "\"" + current.trackName + "\" with " + current.normalLapCPs + " segments\n\n" +
+				"Required configuration:\n" + "\"" + current.TrackName + "\" with " + current.NormalLapCPs + " segments\n\n" +
 				"Do you want to save your splits now and generate new ones for this track?",
 				"MX Simulator Auto Splitter",
 				MessageBoxButtons.YesNo,
@@ -89,52 +85,34 @@ init
 		}
 
 		if (result == DialogResult.Yes) {
-			LiveSplitState _state = (LiveSplitState)new LiveSplitState(timer.Run, timer.Form, timer.Layout, timer.LayoutSettings, timer.Settings).Clone();
-			_state.Form.ContextMenuStrip.Items["saveSplitsAsMenuItem"].PerformClick();
+			timer.Form.ContextMenuStrip.Items["saveSplitsAsMenuItem"].PerformClick();
 
-			/*if (Directory.EnumerateFiles(Directory.GetCurrentDirectory() + @"\Resources\Splits").Any(fileName => fileName.Contains(current.trackName)))
-			{
-				result = MessageBox.Show(
-					"A file for this track has been found in your directory. Would you like to load it?",
-					"MX Simulator Auto Splitter",
-					MessageBoxButtons.YesNo,
-					MessageBoxIcon.Exclamation);
+			int currAmtSplits = timer.Run.Count;
 
-				if (result == DialogResult.Yes)
-					_state.Form.ContextMenuStrip.Items["openSplitsFileMenuItem"].PerformClick(); // "openSplitsFromFileMenuItem" is not a valid object. Need to investigate.
+			for (int gateNo = 1; gateNo <= current.NormalLapCPs; ++gateNo)
+				timer.Run.Add(new Segment("Gate " + gateNo));
 
-				hasLoaded = true;
-			}*/
+			for (int splitNo = 1; splitNo <= currAmtSplits; ++splitNo)
+				timer.Run.RemoveAt(0);
 
-			if (!hasLoaded)
-			{
-				int currAmtSplits = timer.Run.Count;
-
-				for (int gateNo = 1; gateNo <= current.normalLapCPs; ++gateNo)
-					timer.Run.Add(new Segment("Gate " + gateNo));
-
-				for (int splitNo = 1; splitNo <= currAmtSplits; ++splitNo)
-					timer.Run.RemoveAt(0);
-
-				timer.Run.GameName = "MX Simulator";
-				timer.Run.CategoryName = current.trackName;
-			}
+			timer.Run.GameName = "MX Simulator";
+			timer.Run.CategoryName = current.TrackName;
 		}
 	});
 
 	// Using this instead of Thread.Sleep() so as to not block the thread.
-	vars.wait = (Action<int>) ((time) => System.Threading.Tasks.Task.Run(async () => await System.Threading.Tasks.Task.Delay(time)).Wait());
+	vars.Wait = (Action<int>) ((time) => System.Threading.Tasks.Task.Run(async () => await System.Threading.Tasks.Task.Delay(time)).Wait());
 	#endregion
 
-	vars.updateWatchers();
-	vars.message();
+	vars.UpdateWatchers();
+	vars.TrackMsg();
 }
 
 update
 {
 	if (vars.idWatcher == null || vars.checkpointWatcher == null)
 	{
-		vars.updateWatchers();
+		vars.UpdateWatchers();
 		return false;
 	}
 
@@ -147,28 +125,28 @@ update
 	current.id = vars.idWatcher.Current;
 
 	vars.CPsChanged = old.id == current.id && old.CPs != current.CPs || old.id != current.id && old.CPs == current.CPs;
-	vars.onFinalSplit = timer.CurrentSplitIndex == timer.Run.Count - 1;
-	vars.onFirstCP = (current.CPs - current.firstLapCPs) % current.normalLapCPs == 0;
+	vars.OnFinalSplit = timer.CurrentSplitIndex == timer.Run.Count - 1;
+	vars.OnFirstCP = (current.CPs - current.FirstLapCPs) % current.NormalLapCPs == 0;
 
-	if (current.id != current.playerID) vars.updateWatchers();
+	if (current.id != current.PlayerID) vars.UpdateWatchers();
 	#endregion
 
 
 	#region Splits Message
 	// When the track the user is on changes, a messagebox will appear prompting them to save the splits and create new ones for this track.
 
-	if (old.firstLapCPs != old.firstLapCPs ||
-	    old.normalLapCPs != current.normalLapCPs ||
-	    old.trackName != current.trackName && !String.IsNullOrEmpty(current.trackName))
+	if (old.FirstLapCPs != old.FirstLapCPs ||
+	    old.NormalLapCPs != current.NormalLapCPs ||
+	    old.TrackName != current.TrackName && !String.IsNullOrEmpty(current.TrackName))
 	{
-		vars.showMsg = true;
+		vars.ShowMsg = true;
 	}
 
-	if (vars.showMsg && current.raceTicks > 0)
+	if (vars.ShowMsg && current.RaceTicks > 0)
 	{
-		vars.showMsg = false;
-		vars.msgShownForTrack = current.trackName;
-		vars.message();
+		vars.ShowMsg = false;
+		vars.MsgShownForTrack = current.TrackName;
+		vars.TrackMsg();
 	}
 	#endregion
 
@@ -178,21 +156,21 @@ update
 
 	if (settings.ResetEnabled)
 	{
-		if (old.raceTicks > current.raceTicks ||
-		    current.id != current.playerID ||
-		    vars.CPsChanged && vars.onFirstCP && (!vars.onFinalSplit || !vars.validLap) && timer.CurrentSplitIndex > 0)
+		if (old.RaceTicks > current.RaceTicks ||
+		    current.id != current.PlayerID ||
+		    vars.CPsChanged && vars.OnFirstCP && (!vars.OnFinalSplit || !vars.ValidLap) && timer.CurrentSplitIndex > 0)
 		{
-			vars.wait(500);
-			vars.updateWatchers();
-			vars.timerModel.Reset();
+			vars.Wait(500);
+			vars.UpdateWatchers();
+			vars.TimerModel.Reset();
 		}
 
 		if (timer.CurrentPhase == TimerPhase.Ended && old.id == current.id && old.CPs < current.CPs)
 		{
-			vars.timerModel.Reset();
-			vars.timerModel.Start();
+			vars.TimerModel.Reset();
+			vars.TimerModel.Start();
 
-			vars.wait(20);
+			vars.Wait(20);
 		}
 	}
 	#endregion
@@ -200,10 +178,10 @@ update
 
 start
 {
-	if (old.CPs != current.CPs && current.CPs == current.firstLapCPs ||
-	    current.CPs - current.firstLapCPs > 0 && vars.onFirstCP)
+	if (old.CPs != current.CPs && current.CPs == current.FirstLapCPs ||
+	    current.CPs - current.FirstLapCPs > 0 && vars.OnFirstCP)
 	{
-		vars.startTicks = current.raceTicks;
+		vars.StartTicks = current.RaceTicks;
 		return true;
 	}
 }
@@ -212,20 +190,20 @@ split
 {
 	if (vars.CPsChanged)
 	{
-		if (old.playersInRace < current.playersInRace) return false;
+		if (old.PlayersInRace < current.PlayersInRace) return false;
 		int expectedCP = old.CPs + 1, actualCP = current.CPs;
 
 		if (expectedCP < actualCP)
 		{
-			vars.validLap = false;
+			vars.ValidLap = false;
 			for (int i = expectedCP; i < actualCP; ++i)
-				vars.timerModel.SkipSplit();
+				vars.TimerModel.SkipSplit();
 		}
 
-		if (vars.onFirstCP)
+		if (vars.OnFirstCP)
 		{
-			vars.startTicks = current.raceTicks;
-			if (!vars.onFinalSplit || !vars.validLap) return false;
+			vars.StartTicks = current.RaceTicks;
+			if (!vars.OnFinalSplit || !vars.ValidLap) return false;
 		}
 
 		return true;
@@ -239,7 +217,7 @@ reset
 
 gameTime
 {
-	return TimeSpan.FromSeconds((current.raceTicks - vars.startTicks) * 0.0078125);
+	return TimeSpan.FromSeconds((current.RaceTicks - vars.StartTicks) * 0.0078125);
 }
 
 isLoading
@@ -249,10 +227,10 @@ isLoading
 
 exit
 {
-	vars.timerModel.Reset();
+	vars.TimerModel.Reset();
 }
 
 shutdown
 {
-	timer.OnStart -= vars.timerStart;
+	timer.OnStart -= vars.TimerStart;
 }
