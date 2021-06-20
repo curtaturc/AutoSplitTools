@@ -1,6 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<script>
-    <init>
 	vars.TokenSource = new CancellationTokenSource();
 	vars.MonoFinder = new Thread(() =>
 	{
@@ -10,16 +7,14 @@
 		int PTR_SIZE = game.Is64Bit() ? 0x8 : 0x4;
 
 		SignatureScanner MonoScanner = null;
-		var mono_image_loaded = new SigScanTarget(2, "FF 35 ???????? E8 ???????? 83 C4 08 8B F0 83 3D ???????? 00");
-		mono_image_loaded.OnFound = (p, s, ptr) => p.ReadPointer(ptr);
 		IntPtr loaded_images = IntPtr.Zero, Asm_Cs_image = IntPtr.Zero;
 
-		vars.Mono = new Dictionary<string, Dictionary&lt;string, IntPtr&gt;&gt;();
+		vars.Mono = new Dictionary<string, Dictionary<string, IntPtr>>();
 
 		var Token = vars.TokenSource.Token;
 		while (!Token.IsCancellationRequested)
 		{
-			var Mono = game.ModulesWow64Safe().FirstOrDefault(m =&gt; m.ModuleName.StartsWith("mono"));
+			var Mono = game.ModulesWow64Safe().FirstOrDefault(m => m.ModuleName.StartsWith("mono"));
 			if (Mono == null)
 			{
 				vars.Dbg("Could not find Mono module. Trying again.");
@@ -47,7 +42,7 @@
 		while (!Token.IsCancellationRequested)
 		{
 			var ghashtable = IntPtr.Zero;
-			var size = new DeepPointer(loaded_images, OFFSETS_TABLE[0]).Deref&lt;int&gt;(game);
+			var size = new DeepPointer(loaded_images, OFFSETS_TABLE[0]).Deref<int>(game);
 			new DeepPointer(loaded_images, OFFSETS_TABLE[1], PTR_SIZE * (int)(ASM_CS_HASH % size)).DerefOffsets(game, out ghashtable);
 
 			for (var ptr = game.ReadPointer(ghashtable); ptr != IntPtr.Zero; ptr = game.ReadPointer(ptr + OFFSETS_TABLE[2]))
@@ -70,34 +65,34 @@
 			break;
 		}
 
-		Func&lt;string, string&gt; cleanString = (input) =&gt;
+		Func<string, string> cleanString = (input) =>
 		{
-			if (input.Contains("BackingField")) input = System.Text.RegularExpressions.Regex.Matches(input, @"&lt;(.+)&gt;k__BackingField")[0].Groups[1].Value;
+			if (input.Contains("BackingField")) input = System.Text.RegularExpressions.Regex.Matches(input, @"<(.+)>k__BackingField")[0].Groups[1].Value;
 			if (input.Contains("`")) input = input.Remove(input.IndexOf("`"));
 			return input;
 		};
 
-		Func&lt;IntPtr, IntPtr&gt; findSingletonInstance = (klass) =&gt;
+		Func<IntPtr, IntPtr> findSingletonInstance = (klass) =>
 		{
 			klass = game.ReadPointer(klass + OFFSETS_KLASS[0]);
 			IntPtr mono_fields = game.ReadPointer(klass + OFFSETS_KLASS[4]), ptr = game.ReadPointer(mono_fields + OFFSETS_FIELD[1]);
 
 			for (int i = 0; ptr != IntPtr.Zero; i += OFFSETS_FIELD[0], ptr = game.ReadPointer(mono_fields + OFFSETS_FIELD[1] + i))
 			{
-				var type = new DeepPointer(mono_fields + i, PTR_SIZE).Deref&lt;short&gt;(game);
+				var type = new DeepPointer(mono_fields + i, PTR_SIZE).Deref<short>(game);
 				var name = cleanString(new DeepPointer(mono_fields + OFFSETS_FIELD[1] + i, 0x0).DerefString(game, 64, ""));
-				var offset = game.ReadValue&lt;int&gt;(mono_fields + OFFSETS_FIELD[2] + i);
-				if (string.IsNullOrEmpty(name) || type &lt; 0x10 || type &gt; 0x17 || !name.ToLower().Contains("instance")) continue;
+				var offset = game.ReadValue<int>(mono_fields + OFFSETS_FIELD[2] + i);
+				if (string.IsNullOrEmpty(name) || type < 0x10 || type > 0x17 || !name.ToLower().Contains("instance")) continue;
 
-				return new DeepPointer(klass + OFFSETS_KLASS[5], PTR_SIZE, OFFSETS_KLASS[3]).Deref&lt;IntPtr&gt;(game) + offset;
+				return new DeepPointer(klass + OFFSETS_KLASS[5], PTR_SIZE, OFFSETS_KLASS[3]).Deref<IntPtr>(game) + offset;
 			}
 
 			return IntPtr.Zero;
 		};
 
-		Func&lt;IntPtr, Dictionary&lt;string, IntPtr&gt;&gt; findStatics = (klass) =&gt;
+		Func<IntPtr, Dictionary<string, IntPtr>> findStatics = (klass) =>
 		{
-			var fields = new Dictionary&lt;string, IntPtr&gt;();
+			var fields = new Dictionary<string, IntPtr>();
 			IntPtr mono_fields = game.ReadPointer(klass + OFFSETS_KLASS[4]), ptr = game.ReadPointer(mono_fields + OFFSETS_FIELD[1]);
 
 			var parent = new DeepPointer(klass + OFFSETS_KLASS[0], OFFSETS_KLASS[1], 0x0).DerefString(game, 64, "");
@@ -109,12 +104,12 @@
 
 			for (int i = 0; ptr != IntPtr.Zero; i += OFFSETS_FIELD[0], ptr = game.ReadPointer(mono_fields + OFFSETS_FIELD[1] + i))
 			{
-				var type = new DeepPointer(mono_fields + i, PTR_SIZE).Deref&lt;short&gt;(game);
+				var type = new DeepPointer(mono_fields + i, PTR_SIZE).Deref<short>(game);
 				var name = cleanString(new DeepPointer(mono_fields + OFFSETS_FIELD[1] + i, 0x0).DerefString(game, 64, ""));
-				var offset = game.ReadValue&lt;int&gt;(mono_fields + OFFSETS_FIELD[2] + i);
-				if (string.IsNullOrEmpty(name) || type &lt; 0x10 || type &gt; 0x17 || fields.ContainsKey(name)) continue;
+				var offset = game.ReadValue<int>(mono_fields + OFFSETS_FIELD[2] + i);
+				if (string.IsNullOrEmpty(name) || type < 0x10 || type > 0x17 || fields.ContainsKey(name)) continue;
 
-				fields.Add(name, new DeepPointer(klass + OFFSETS_KLASS[5], PTR_SIZE, OFFSETS_KLASS[3]).Deref&lt;IntPtr&gt;(game) + offset);
+				fields.Add(name, new DeepPointer(klass + OFFSETS_KLASS[5], PTR_SIZE, OFFSETS_KLASS[3]).Deref<IntPtr>(game) + offset);
 			}
 
 			return fields;
@@ -122,7 +117,7 @@
 
 		while (!Token.IsCancellationRequested)
 		{
-			var size = game.ReadValue&lt;int&gt;(Asm_Cs_image + OFFSETS_CACHE[0] + OFFSETS_CACHE[1]);
+			var size = game.ReadValue<int>(Asm_Cs_image + OFFSETS_CACHE[0] + OFFSETS_CACHE[1]);
 			var monovtable = game.ReadPointer(Asm_Cs_image + OFFSETS_CACHE[0] + OFFSETS_CACHE[2]);
 
 			if (size == 0)
@@ -133,18 +128,18 @@
 				continue;
 			}
 
-			for (int i = 0; i &lt; size; ++i)
+			for (int i = 0; i < size; ++i)
 			{
 				for (var klass = game.ReadPointer(monovtable + PTR_SIZE * i); klass != IntPtr.Zero; klass = game.ReadPointer(klass + OFFSETS_KLASS[6]))
 				{
 					string class_namespace = new DeepPointer(klass + OFFSETS_KLASS[2], 0x0).DerefString(game, 128, "default");
-					if (class_namespace.Length &gt; 0) continue;
+					if (class_namespace.Length > 0) continue;
 
 					string class_name = new DeepPointer(klass + OFFSETS_KLASS[1], 0x0).DerefString(game, 128, "");
 					if (vars.Mono.ContainsKey(class_name) || string.IsNullOrEmpty(class_name)) continue;
 
 					var static_fields = findStatics(klass);
-					if (static_fields.Count &lt;= 0) continue;
+					if (static_fields.Count <= 0) continue;
 
 					vars.Dbg(string.Format("Added class '{0}' with fields\n{1}", class_name, string.Join(",\n", static_fields.Keys)));
 					vars.Mono.Add(class_name, static_fields);
@@ -159,20 +154,9 @@
 
 	vars.MonoFinder.Start();
 
-	vars.Bool = (Func&lt;dynamic, int[], bool&gt;) ((field, offsets) =&gt; new DeepPointer((IntPtr)field, offsets).Deref&lt;bool&gt;(game));
-	vars.Int = (Func&lt;dynamic, int[], int&gt;) ((field, offsets) =&gt; new DeepPointer((IntPtr)field, offsets).Deref&lt;int&gt;(game));
-	vars.Float = (Func&lt;dynamic, int[], float&gt;) ((field, offsets) =&gt; new DeepPointer((IntPtr)field, offsets).Deref&lt;float&gt;(game));
-	vars.Double = (Func&lt;dynamic, int[], double&gt;) ((field, offsets) =&gt; new DeepPointer((IntPtr)field, offsets).Deref&lt;double&gt;(game));
-	vars.Str = (Func&lt;dynamic, int[], int, string&gt;) ((field, offsets, length) =&gt; new DeepPointer((IntPtr)field, offsets).DerefString(game, length, ""));
-	vars.IntPtr = (Func&lt;dynamic, int[], IntPtr&gt;) ((field, offsets) =&gt; new DeepPointer((IntPtr)field, offsets).Deref&lt;IntPtr&gt;(game));
-    </init>
-    <update>
-	if (vars.MonoFinder.IsAlive) return false;
-    </update>
-    <exit>
-	vars.TokenSource.Cancel();
-    </exit>
-    <shutdown>
-	vars.TokenSource.Cancel();
-    </shutdown>
-</script>
+	vars.Bool = (Func<dynamic, int[], bool>) ((field, offsets) => new DeepPointer((IntPtr)field, offsets).Deref<bool>(game));
+	vars.Int = (Func<dynamic, int[], int>) ((field, offsets) => new DeepPointer((IntPtr)field, offsets).Deref<int>(game));
+	vars.Float = (Func<dynamic, int[], float>) ((field, offsets) => new DeepPointer((IntPtr)field, offsets).Deref<float>(game));
+	vars.Double = (Func<dynamic, int[], double>) ((field, offsets) => new DeepPointer((IntPtr)field, offsets).Deref<double>(game));
+	vars.Str = (Func<dynamic, int[], int, string>) ((field, offsets, length) => new DeepPointer((IntPtr)field, offsets).DerefString(game, length, ""));
+	vars.IntPtr = (Func<dynamic, int[], IntPtr>) ((field, offsets) => new DeepPointer((IntPtr)field, offsets).Deref<IntPtr>(game));
