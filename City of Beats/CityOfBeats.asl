@@ -67,7 +67,7 @@ start
 split
 {
 	return !vars.Watchers["CurrentNodeFinished"].Old && vars.Watchers["CurrentNodeFinished"].Current ||
-	       vars.Watchers["BossHealth"].Old > 1 && vars.Watchers["BossHealth"].Current <= 1 && vars.Watchers["VisitedNodes"] >= 9;
+	       vars.Watchers["BossHealth"].Old > 1 && vars.Watchers["BossHealth"].Current <= 1 && vars.Watchers["VisitedNodes"].Current >= 9;
 }
 
 reset
