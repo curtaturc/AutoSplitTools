@@ -34,7 +34,7 @@ init
 				new MemoryWatcher<bool>(new DeepPointer(UWorld, 0x120, 0x280, 0x230)) { Name = "CurrentNodeFinished" },
 				new MemoryWatcher<bool>(new DeepPointer(UWorld, 0x120, 0x280, 0x231)) { Name = "ExpeditionOngoing" },
 				new MemoryWatcher<float>(new DeepPointer(UWorld, 0x120, 0x24C)) { Name = "WorldTime" },
-				new MemoryWatcher<int>(new DeepPointer(UWorld, 0x30, 0xE8, 0x2A0, 0x2F0, 0x4D8, 0x170)) { Name = "BossHealth" }
+				new MemoryWatcher<int>(new DeepPointer(UWorld, 0x30, 0xE8, 0x2A0, 0x2F0, 0x4D8, 0x170)) { Name = "BossHealth", FailAction = MemoryWatcher.ReadFailAction.SetZeroOrNull }
 			};
 
 			break;
