@@ -32,6 +32,7 @@ init
 			vars.Watchers = new MemoryWatcherList
 			{
 				new MemoryWatcher<bool>(new DeepPointer(UWorld, 0x120, 0x280, 0x230)) { Name = "CurrentNodeFinished" },
+				new MemoryWatcher<int>(new DeepPointer(UWorld, 0x120, 0x280, 0x240)) { Name = "VisitedNodes" },
 				new MemoryWatcher<bool>(new DeepPointer(UWorld, 0x120, 0x280, 0x231)) { Name = "ExpeditionOngoing" },
 				new MemoryWatcher<float>(new DeepPointer(UWorld, 0x120, 0x24C)) { Name = "WorldTime" },
 				new MemoryWatcher<int>(new DeepPointer(UWorld, 0x30, 0xE8, 0x2A0, 0x2F0, 0x4D8, 0x170)) { Name = "BossHealth", FailAction = MemoryWatcher.ReadFailAction.SetZeroOrNull }
@@ -66,7 +67,7 @@ start
 split
 {
 	return !vars.Watchers["CurrentNodeFinished"].Old && vars.Watchers["CurrentNodeFinished"].Current ||
-	       vars.Watchers["BossHealth"].Old > 0 && vars.Watchers["BossHealth"].Current == 0;
+	       vars.Watchers["BossHealth"].Old > 1 && vars.Watchers["BossHealth"].Current <= 1 && vars.Watchers["VisitedNodes"] >= 9;
 }
 
 reset
