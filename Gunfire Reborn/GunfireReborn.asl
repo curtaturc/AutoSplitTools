@@ -50,14 +50,18 @@ init
 	Func<IntPtr, int, IntPtr> FromRelativeAddress = (ptr, size) =>
 		ptr + size + game.ReadValue<int>(ptr);
 
-	var WarCacheSig = new SigScanTarget(3, "48 8B 05 ???????? 48 8B 80 ???????? 33 C9 C6 00 01");
-	var GameUtilitySig = new SigScanTarget(3, "48 8B 0D ???????? F3 41 0F 59 F4");
+	var SceneManagerSig = new SigScanTarget(3, "48 8B 05 ???????? 48 8B 80 ???????? 44 8B 38");
+	var GameUtilitySig = new SigScanTarget(3, "48 8B 0D ???????? 48 8B 81 ???????? C6 40 ?? 01 48 83 C4 20");
 
-	var WarCache = FromRelativeAddress(AssemblyScanner.Scan(WarCacheSig), 4);
-	var SceneManager = FromRelativeAddress(AssemblyScanner.Scan(WarCacheSig) + 0xDF, 4);
+	var SceneManager = FromRelativeAddress(AssemblyScanner.Scan(SceneManagerSig), 4);
+	var WarCache = FromRelativeAddress(AssemblyScanner.Scan(SceneManagerSig) + 0x11, 4);
 	var GameUtility = FromRelativeAddress(AssemblyScanner.Scan(GameUtilitySig), 4);
 
-	if (!(vars.SigsFound = new[] { WarCache, SceneManager, GameUtility }.All(a => a != IntPtr.Zero))) return;
+	if (!(vars.SigsFound = new[] { WarCache, SceneManager, GameUtility }.All(a => (long)a > 0xF0))) return;
+
+	vars.Dbg("WarCache: 0x" + WarCache.ToString("X"));
+	vars.Dbg("SceneManager: 0x" + SceneManager.ToString("X"));
+	vars.Dbg("GameUtility: 0x" + GameUtility.ToString("X"));
 
 	vars.Watchers = new MemoryWatcherList
 	{
