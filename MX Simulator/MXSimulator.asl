@@ -3,8 +3,8 @@ state("mx")
 	int PlayerID         : 0x26F234;
 	int PlayersInRace    : 0x323220;
 
-	int FirstLapCPs      : 0x17234C;
-	int NormalLapCPs     : 0x172350;
+	int FirstLapCPs      : 0x320D4C;
+	int NormalLapCPs     : 0x320D50;
 
 	//double TickRate      : 0x162B90;
 	int RaceTicks        : 0x322300;
@@ -35,7 +35,7 @@ init
 {
 	#region Initializing Variables
 	current.CPs = 0;
-	current.id = 0;
+	current.IDinRace = 0;
 	vars.StartTicks = 0;
 
 	vars.CPsChanged = false;
@@ -44,24 +44,21 @@ init
 	vars.ValidLap = true;
 	vars.ShowMsg = false;
 
-	vars.checkpointWatcher = (MemoryWatcher<int>)null;
-	vars.idWatcher = (MemoryWatcher<int>)null;
+	vars.IDPtr = IntPtr.Zero;
+	vars.CPPtr = IntPtr.Zero;
 	#endregion
 
 	#region Custom Functions
 	// Whenever the player's position changes in a race (ghost in time trials counts too), the checkpoint memory address needs to be updated.
-	vars.UpdateWatchers = (Action) (() =>
+	vars.UpdatePtrs = (Action) (() =>
 	{
 		if (current.PlayersInRace > 0)
 		{
 			for (int i = 0; i < current.PlayersInRace; ++i)
 			{
-				vars.idWatcher = new MemoryWatcher<int>(new DeepPointer(0x322AA0 + 0xC * i));
-				vars.idWatcher.Update(game);
-
-				if (vars.idWatcher.Current == current.PlayerID)
+				if (game.ReadValue<int>((IntPtr)(vars.IDPtr = 0x322AA0 + 0xC * i)) == current.PlayerID)
 				{
-					vars.checkpointWatcher = new MemoryWatcher<int>(new DeepPointer(0x322AA4 + 0xC * i));
+					vars.CPPtr = 0x322AA4 + 0xC * i;
 					break;
 				}
 			}
@@ -84,7 +81,8 @@ init
 			);
 		}
 
-		if (result == DialogResult.Yes) {
+		if (result == DialogResult.Yes)
+		{
 			timer.Form.ContextMenuStrip.Items["saveSplitsAsMenuItem"].PerformClick();
 
 			int currAmtSplits = timer.Run.Count;
@@ -104,31 +102,29 @@ init
 	vars.Wait = (Action<int>) ((time) => System.Threading.Tasks.Task.Run(async () => await System.Threading.Tasks.Task.Delay(time)).Wait());
 	#endregion
 
-	vars.UpdateWatchers();
+	vars.UpdatePtrs();
 	vars.TrackMsg();
 }
 
 update
 {
-	if (vars.idWatcher == null || vars.checkpointWatcher == null)
+	if ((IntPtr)vars.IDPtr == IntPtr.Zero || (IntPtr)vars.CPPtr == IntPtr.Zero)
 	{
-		vars.UpdateWatchers();
+		vars.UpdatePtrs();
 		return false;
 	}
 
 	#region Variable Updating
 	// Updating several variables according to our needs.
 
-	vars.idWatcher.Update(game);
-	vars.checkpointWatcher.Update(game);
-	current.CPs = vars.checkpointWatcher.Current;
-	current.id = vars.idWatcher.Current;
+	current.CPs = game.ReadValue<int>((IntPtr)vars.CPPtr);
+	current.IDinRace = game.ReadValue<int>((IntPtr)vars.IDPtr);
 
-	vars.CPsChanged = old.id == current.id && old.CPs != current.CPs || old.id != current.id && old.CPs == current.CPs;
+	vars.CPsChanged = old.PlayerID == current.IDinRace && old.CPs != current.CPs || old.PlayerID != current.IDinRace && old.CPs == current.CPs;
 	vars.OnFinalSplit = timer.CurrentSplitIndex == timer.Run.Count - 1;
 	vars.OnFirstCP = (current.CPs - current.FirstLapCPs) % current.NormalLapCPs == 0;
 
-	if (current.id != current.PlayerID) vars.UpdateWatchers();
+	if (current.IDinRace != current.PlayerID) vars.UpdatePtrs();
 	#endregion
 
 
@@ -137,7 +133,7 @@ update
 
 	if (old.FirstLapCPs != old.FirstLapCPs ||
 	    old.NormalLapCPs != current.NormalLapCPs ||
-	    old.TrackName != current.TrackName && !String.IsNullOrEmpty(current.TrackName))
+	    old.TrackName != current.TrackName && !string.IsNullOrEmpty(current.TrackName))
 	{
 		vars.ShowMsg = true;
 	}
@@ -157,15 +153,15 @@ update
 	if (settings.ResetEnabled)
 	{
 		if (old.RaceTicks > current.RaceTicks ||
-		    current.id != current.PlayerID ||
+		    current.IDinRace != current.PlayerID ||
 		    vars.CPsChanged && vars.OnFirstCP && (!vars.OnFinalSplit || !vars.ValidLap) && timer.CurrentSplitIndex > 0)
 		{
 			vars.Wait(500);
-			vars.UpdateWatchers();
+			vars.UpdatePtrs();
 			vars.TimerModel.Reset();
 		}
 
-		if (timer.CurrentPhase == TimerPhase.Ended && old.id == current.id && old.CPs < current.CPs)
+		if (timer.CurrentPhase == TimerPhase.Ended && old.PlayerID == current.IDinRace && old.CPs < current.CPs)
 		{
 			vars.TimerModel.Reset();
 			vars.TimerModel.Start();
