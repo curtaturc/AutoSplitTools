@@ -11,8 +11,8 @@ Resets the timer when returning to the menu.
 * check and edit the settings to your liking
 
 ## Game Links
-*Leaderboards: [speedrun.com/thepedestrian](https://speedrun.com/ruff_night_at_the_gallery)*  
-*Discord: [discord.gg/aGmEnx9](https://discord.gg/S3YZyUDZ73)*  
+*Leaderboards: [speedrun.com/ruff_night_at_the_gallery](https://speedrun.com/ruff_night_at_the_gallery)*  
+*Discord: [discord.gg/S3YZyUDZ73](https://discord.gg/S3YZyUDZ73)*  
 *Game: [s.team/a/1463470](https://s.team/a/1463470) (Free)*
 
 ---
