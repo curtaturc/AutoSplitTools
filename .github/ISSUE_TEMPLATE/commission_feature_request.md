@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 For rates and other information, please refer to my commission info [here](https://github.com/just-ero/AutoSplitTools#commission-information).  
-[ ] I have read and understood these terms.
+- [ ] I have read and understood these terms.
 
 ---
 ## *Feature Request*
@@ -29,9 +29,9 @@ Bad: I want the timer to stop when the run is over..., I want the timer to split
 * Download/store link (+ price if applicable): 
 
 *Features*:  
-[ ] Start: Describe an event or events upon which the timer should start.  
-[ ] Split: Describe an event or events upon which the timer should split.  
-[ ] Reset: Describe an event or events upon which the timer should reset.  
-[ ] Load removal / game time synchronization: Explain how your game's in-game time works. If not applicable, please explain when and how loading times should be removed.
+- [ ] Start: Describe an event or events upon which the timer should start.  
+- [ ] Split: Describe an event or events upon which the timer should split.  
+- [ ] Reset: Describe an event or events upon which the timer should reset.  
+- [ ] Load removal / game time synchronization: Explain how your game's in-game time works. If not applicable, please explain when and how loading times should be removed.
 
 Please remove all unused or unimportant lines from this template.
