@@ -8,12 +8,12 @@ startup
 {
 	if (timer.CurrentTimingMethod == TimingMethod.RealTime)
 	{
-		var Result = MessageBox.Show(
+		var mbox = MessageBox.Show(
 			"Removing loads from Hello Neighbor requires comparing against Game Time.\nWould you like to switch to it?",
 			"Hello Neighbor Load Remover",
 			MessageBoxButtons.YesNo);
 
-		if (Result == DialogResult.Yes) timer.CurrentTimingMethod = TimingMethod.GameTime;
+		if (mbox == DialogResult.Yes) timer.CurrentTimingMethod = TimingMethod.GameTime;
 	}
 }
 
