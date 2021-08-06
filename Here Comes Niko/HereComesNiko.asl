@@ -300,18 +300,29 @@ init
 	{
 		vars.Dbg("Starting mono thread.");
 
-		ProcessModuleWow64Safe mono_bdwgc = null;
+		ProcessModuleWow64Safe mono_bdwgc = null, unity = null;
 		var mono = new Dictionary<string, IntPtr>();
 
 		var Token = vars.TokenSource.Token;
 		while (!Token.IsCancellationRequested)
 		{
-			mono_bdwgc = game.ModulesWow64Safe().FirstOrDefault(m => m.ModuleName == "mono-2.0-bdwgc.dll");
+			var mod = game.ModulesWow64Safe();
+			mono_bdwgc = mod.FirstOrDefault(m => m.ModuleName == "mono-2.0-bdwgc.dll");
+			unity = mod.FirstOrDefault(m => m.ModuleName == "UnityPlayer.dll");
 
-			if (mono_bdwgc != null) break;
+			if (mono_bdwgc != null && unity != null) break;
 
 			vars.Dbg("One of more modules not found. Retrying.");
 			Thread.Sleep(2000);
+		}
+
+		if (unity != null)
+		{
+			var unityScanner = new SignatureScanner(game, unity.BaseAddress, unity.ModuleMemorySize);
+			var gBurstCompilerServiceTrg = new SigScanTarget(3, "48 8B 0D ???????? 48 89 44 24 ?? E8 ???????? 8B 44 24")
+			{ OnFound = (p, s, ptr) => ptr + 0x4 + p.ReadValue<int>(ptr) };
+			var gBurstCompilerService = unityScanner.Scan(gBurstCompilerServiceTrg);
+			vars.EndScreenTimer = new MemoryWatcher<float>(new DeepPointer(gBurstCompilerService, 0x20, 0xB8, 0x258, 0x1D8, 0x118, 0x44));
 		}
 
 		while (!Token.IsCancellationRequested)
@@ -370,6 +381,7 @@ update
 
 	vars.Level.Update(game);
 	vars.Loading.Update(game);
+	vars.EndScreenTimer.Update(game);
 	vars.WorldDataWatchers.UpdateAll(game);
 }
 
@@ -387,6 +399,9 @@ split
 	if (vars.Level.Changed)
 		return settings[vars.Level.Old + "_End"];
 
+	if (vars.EndScreenTimer.Old == 0f && vars.EndScreenTimer.Current > 0f)
+		return true;
+
 	bool split = false;
 	foreach (var watcher in vars.WorldDataWatchers)
 	{
@@ -395,6 +410,7 @@ split
 		int offset = Convert.ToInt32(watcher.Name, 16);
 		string newFlag = new DeepPointer((IntPtr)vars.WorldDataPtr, offset, 0x10, 0x20 + 0x8 * (watcher.Current - 1), 0x14).DerefString(game, 64);
 		newFlag = vars.Level.Current + "_" + newFlag;
+
 		vars.Dbg("Got flag " + newFlag);
 		if (!settings[newFlag] || vars.CompletedFlags.Contains(newFlag)) continue;
 

@@ -1,7 +1,7 @@
 # Autosplitter for "Here Comes Niko!"
 ## Information
 Starts the timer with an offset when the first loading screen completes.  
-Splits are available in the settings. Does not split upon entering home.  
+Splits are available in the settings.  
 Resets the timer when starting a new file.  
 Removes loads.
 
