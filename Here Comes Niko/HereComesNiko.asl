@@ -247,7 +247,7 @@ startup
 		{ "Tadpole HQ", "thq_Misc", false, "Miscellaneous" },
 			{ "thq_Misc", "7_lock1", false, "unlock the second Arcade Machine" },
 
-		{ "Tadpole HQ", "7_End", true, "Enter train to leave Tadpole HQ" }
+		{ "Tadpole HQ", "7_End", false, "Enter train to leave Tadpole HQ" }
 	};
 
 	settings.Add("Home");
