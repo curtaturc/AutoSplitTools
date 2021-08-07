@@ -387,9 +387,9 @@ update
 
 start
 {
-	if (vars.Level.Current == 20 && vars.Loading.Old && !vars.Loading.Current)
+	if (vars.Level.Changed && vars.Level.Current == 0)
 	{
-		timer.Run.Offset = TimeSpan.FromSeconds(-5.99);
+		timer.Run.Offset = TimeSpan.FromSeconds(0.85);
 		return true;
 	}
 }
