@@ -397,10 +397,16 @@ start
 split
 {
 	if (vars.Level.Changed)
+	{
+		vars.Dbg("LEVEL CHANGED from " + vars.Level.Old + " to " + vars.Level.Current);
 		return settings[vars.Level.Old + "_End"];
+	}
 
-	if (vars.EndScreenTimer.Old == 0f && vars.EndScreenTimer.Current > 0f)
+	if (vars.Level.Current == 1 && vars.EndScreenTimer.Old == 0f && vars.EndScreenTimer.Current > 0f)
+	{
+		vars.Dbg("TIMER SPLIT?");
 		return true;
+	}
 
 	bool split = false;
 	foreach (var watcher in vars.WorldDataWatchers)
