@@ -319,10 +319,10 @@ init
 		if (unity != null)
 		{
 			var unityScanner = new SignatureScanner(game, unity.BaseAddress, unity.ModuleMemorySize);
-			var gBurstCompilerServiceTrg = new SigScanTarget(3, "48 8B 0D ???????? 48 89 44 24 ?? E8 ???????? 8B 44 24")
+			var gBurstCompilerServiceTrg = new SigScanTarget(3, "48 8B 3D ?? ?? ?? ?? 48 8B 5F ?? 48 3B 5F")
 			{ OnFound = (p, s, ptr) => ptr + 0x4 + p.ReadValue<int>(ptr) };
 			var gBurstCompilerService = unityScanner.Scan(gBurstCompilerServiceTrg);
-			vars.EndScreenTimer = new MemoryWatcher<float>(new DeepPointer(gBurstCompilerService, 0x20, 0xB8, 0x258, 0x1D8, 0x118, 0x44));
+			vars.EndScreenTimer = new MemoryWatcher<float>(new DeepPointer(gBurstCompilerService, 0x8, 0x8, 0x30, 0x1B0, 0x118, 0x44));
 		}
 
 		while (!Token.IsCancellationRequested)
