@@ -271,6 +271,7 @@ startup
 	vars.TimerStart = (EventHandler) ((s, e) =>
 	{
 		vars.CompletedFlags.Clear();
+		vars.EndGame = false;
 		timer.Run.Offset = TimeSpan.Zero;
 	});
 	timer.OnStart += vars.TimerStart;
@@ -373,6 +374,7 @@ init
 	vars.ScanThread.Start();
 
 	vars.CompletedFlags = new List<string>();
+	vars.EndGame = false;
 }
 
 update
@@ -399,10 +401,11 @@ split
 	if (vars.Level.Changed)
 	{
 		vars.Dbg("LEVEL CHANGED from " + vars.Level.Old + " to " + vars.Level.Current);
+		if (vars.Level.Old == 7) vars.EndGame = true;
 		return settings[vars.Level.Old + "_End"];
 	}
 
-	if (vars.Level.Current == 1 && vars.EndScreenTimer.Old == 0f && vars.EndScreenTimer.Current > 0f)
+	if (vars.EndGame && vars.EndScreenTimer.Old == 0f && vars.EndScreenTimer.Current > 0f)
 	{
 		vars.Dbg("TIMER SPLIT?");
 		return true;
