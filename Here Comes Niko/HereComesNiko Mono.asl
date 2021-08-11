@@ -1,10 +1,4 @@
-state("Here Comes Niko!")
-{
-	long WorldDataPtr  : "mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0, 0xC88, 0xD0, 0x8, 0x60;
-	float EndScreenTimer : "UnityPlayer.dll", 0x19BDCD8, 0x8, 0x8, 0x30, 0x1B0, 0x118, 0x44;
-	int Level            : "mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0, 0xC48, 0xD0, 0x8, 0x60, 0x8, 0x18, 0x18, 0x38;
-	bool Loading         : "mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0, 0x128, 0xD0, 0x8, 0x60, 0x8, 0x6C;
-}
+state("Here Comes Niko!") {}
 
 startup
 {
@@ -295,15 +289,102 @@ startup
 
 init
 {
-	vars.WorldDataWatchers = new MemoryWatcherList();
-	for (int offset = 0x20; offset <= 0x40; offset += 0x8)
+	var classes = new Dictionary<string, uint>
 	{
-		var watcher = new MemoryWatcher<int>(new DeepPointer(
-			"mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0, 0xC88, 0xD0, 0x8, 0x60, 0x0, offset, 0x18
-		));
-		watcher.Name = "0x" + offset.ToString("X");
-		vars.WorldDataWatchers.Add(watcher);
-	}
+		{ "WorldData", 0x20000CE },
+		{ "SaveManager", 0x20000C6 },
+		{ "TrainManager", 0x200018F }
+	};
+
+	vars.TokenSource = new CancellationTokenSource();
+	vars.ScanThread = new Thread(() =>
+	{
+		vars.Dbg("Starting mono thread.");
+
+		ProcessModuleWow64Safe mono_bdwgc = null, unity = null;
+		var mono = new Dictionary<string, IntPtr>();
+
+		var Token = vars.TokenSource.Token;
+		while (!Token.IsCancellationRequested)
+		{
+			try
+			{
+				while (!Token.IsCancellationRequested)
+				{
+					var mod = game.ModulesWow64Safe();
+					mono_bdwgc = mod.FirstOrDefault(m => m.ModuleName == "mono-2.0-bdwgc.dll");
+					unity = mod.FirstOrDefault(m => m.ModuleName == "UnityPlayer.dll");
+
+					if (mono_bdwgc != null && unity != null) break;
+
+					vars.Dbg("One or more modules not found. Retrying.");
+					Thread.Sleep(2000);
+				}
+
+				if (unity != null)
+				{
+					var unityScanner = new SignatureScanner(game, unity.BaseAddress, unity.ModuleMemorySize);
+					var gBurstCompilerServiceTrg = new SigScanTarget(3, "48 8B 3D ?? ?? ?? ?? 48 8B 5F ?? 48 3B 5F")
+					{ OnFound = (p, s, ptr) => ptr + 0x4 + p.ReadValue<int>(ptr) };
+					var gBurstCompilerService = unityScanner.Scan(gBurstCompilerServiceTrg);
+					vars.EndScreenTimer = new MemoryWatcher<float>(new DeepPointer(gBurstCompilerService, 0x8, 0x8, 0x30, 0x1B0, 0x118, 0x44));
+				}
+
+				while (!Token.IsCancellationRequested)
+				{
+					var size = new DeepPointer("mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4D8).Deref<int>(game);
+					var class_cache = new DeepPointer("mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0).Deref<IntPtr>(game);
+
+					foreach (var target in classes)
+					{
+						var klass = game.ReadPointer(class_cache + 0x8 * (int)(target.Value % size));
+						for (int i = 0; klass != IntPtr.Zero && i < 10; klass = game.ReadPointer(klass + 0x120))
+						{
+							++i;
+							if (game.ReadValue<int>(klass + 0x58) != target.Value) continue;
+
+							mono[target.Key] = new DeepPointer(klass + 0xD0, 0x8, 0x60).Deref<IntPtr>(game);
+							vars.Dbg("Found " + target.Key + " at 0x" + mono[target.Key].ToString("X") + ".");
+							break;
+						}
+					}
+
+					if (mono.Count > 0 && mono.Values.All(ptr => ptr != IntPtr.Zero))
+					{
+						vars.WorldDataPtr = mono["WorldData"];
+						vars.WorldDataWatchers = new MemoryWatcherList();
+						for (int offset = 0x20; offset <= 0x40; offset += 0x8)
+						{
+							var watcher = new MemoryWatcher<int>(new DeepPointer(mono["WorldData"], offset, 0x18));
+							watcher.Name = "0x" + offset.ToString("X");
+							vars.WorldDataWatchers.Add(watcher);
+						}
+
+						vars.WorldDataWatchers.UpdateAll(game);
+						vars.Level = new MemoryWatcher<int>(new DeepPointer(mono["SaveManager"] + 0x8, 0x18, 0x18, 0x38));
+						vars.Loading = new MemoryWatcher<bool>(new DeepPointer(mono["TrainManager"] + 0x8, 0x6C));
+
+						vars.Dbg("All pointers found successfully.");
+						break;
+					}
+
+					vars.Dbg("Not all pointers resolved. Retrying.");
+					Thread.Sleep(5000);
+				}
+			}
+			catch(Exception ex)
+			{
+				vars.Dbg("Error occurred in ScanThread:\n" + ex);
+				Thread.Sleep(5000);
+			}
+
+			break;
+		}
+
+		vars.Dbg("Exiting mono thread.");
+	});
+
+	vars.ScanThread.Start();
 
 	vars.CompletedFlags = new List<string>();
 	vars.EndGame = false;
@@ -311,12 +392,17 @@ init
 
 update
 {
+	if (vars.ScanThread.IsAlive) return false;
+
+	vars.Level.Update(game);
+	vars.Loading.Update(game);
+	vars.EndScreenTimer.Update(game);
 	vars.WorldDataWatchers.UpdateAll(game);
 }
 
 start
 {
-	if (old.Level != current.Level && current.Level == 0)
+	if (vars.Level.Changed && vars.Level.Current == 0)
 	{
 		timer.Run.Offset = TimeSpan.FromSeconds(0.85);
 		return true;
@@ -325,16 +411,18 @@ start
 
 split
 {
-	if (old.Level != current.Level)
+	if (vars.Level.Changed)
 	{
-		if (old.Level == 7) vars.EndGame = true;
-		return settings[old.Level + "_End"];
+		vars.Dbg("LEVEL CHANGED from " + vars.Level.Old + " to " + vars.Level.Current);
+		if (vars.Level.Old == 7) vars.EndGame = true;
+		return settings[vars.Level.Old + "_End"];
 	}
 
-	// if (vars.EndGame && old.EndScreenTimer == 0f && current.EndScreenTimer > 0f)
-	// {
-	// 	return true;
-	// }
+	if (vars.EndGame && vars.EndScreenTimer.Old == 0f && vars.EndScreenTimer.Current > 0f)
+	{
+		vars.Dbg("TIMER SPLIT?");
+		return true;
+	}
 
 	bool split = false;
 	foreach (var watcher in vars.WorldDataWatchers)
@@ -342,8 +430,8 @@ split
 		if (watcher.Old >= watcher.Current) continue;
 
 		int offset = Convert.ToInt32(watcher.Name, 16);
-		string newFlag = new DeepPointer((IntPtr)current.WorldDataPtr, offset, 0x10, 0x20 + 0x8 * (watcher.Current - 1), 0x14).DerefString(game, 64);
-		newFlag = current.Level + "_" + newFlag;
+		string newFlag = new DeepPointer((IntPtr)vars.WorldDataPtr, offset, 0x10, 0x20 + 0x8 * (watcher.Current - 1), 0x14).DerefString(game, 64);
+		newFlag = vars.Level.Current + "_" + newFlag;
 
 		vars.Dbg("Got flag " + newFlag);
 		if (!settings[newFlag] || vars.CompletedFlags.Contains(newFlag)) continue;
@@ -357,15 +445,21 @@ split
 
 reset
 {
-	return old.Level != current.Level && current.Level == 0;
+	return vars.Level.Changed && vars.Level.Current == 0;
 }
 
 isLoading
 {
-	return current.Loading;
+	return vars.Loading.Current;
+}
+
+exit
+{
+	vars.TokenSource.Cancel();
 }
 
 shutdown
 {
+	vars.TokenSource.Cancel();
 	timer.OnStart -= vars.TimerStart;
 }
