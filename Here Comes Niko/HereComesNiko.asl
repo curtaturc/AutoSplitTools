@@ -1,10 +1,4 @@
-state("Here Comes Niko!")
-{
-	long WorldDataPtr    : "mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0, 0xC88, 0xD0, 0x8, 0x60;
-	float EndScreenTimer : "UnityPlayer.dll", 0x19BDCD8, 0x8, 0x8, 0x30, 0x1B0, 0x118, 0x44;
-	int Level            : "mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0, 0xC48, 0xD0, 0x8, 0x60, 0x8, 0x18, 0x18, 0x38;
-	bool Loading         : "mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0, 0x128, 0xD0, 0x8, 0x60, 0x8, 0x6C;
-}
+state("Here Comes Niko!") {}
 
 startup
 {
@@ -295,77 +289,153 @@ startup
 
 init
 {
-	vars.WorldDataWatchers = new MemoryWatcherList();
-	for (int offset = 0x20; offset <= 0x40; offset += 0x8)
+	vars.SpeedrunData = new MemoryWatcherList();
+	vars.WorldData = new MemoryWatcherList();
+
+	Func<SigScanTarget, IntPtr> scanPages = (trg) =>
 	{
-		var watcher = new MemoryWatcher<int>(new DeepPointer(
-			"mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0, 0xC88, 0xD0, 0x8, 0x60, 0x0, offset, 0x18
-		));
-		watcher.Name = "0x" + offset.ToString("X");
-		vars.WorldDataWatchers.Add(watcher);
-	}
+		var ptr = IntPtr.Zero;
+		foreach (var page in game.MemoryPages(true))
+		{
+			var scnr = new SignatureScanner(game, page.BaseAddress, (int)page.RegionSize);
+			if ((ptr = scnr.Scan(trg)) != IntPtr.Zero) return ptr;
+		}
+
+		return IntPtr.Zero;
+	};
+
+	vars.CancelSource = new CancellationTokenSource();
+	vars.ScanThread = new Thread(() =>
+	{
+		vars.Dbg("Starting scan thread.");
+
+		var speedrunDataTrg = new SigScanTarget(10, "00 00 C9 B0 F9 5A 47 88 90 B9");
+		IntPtr speedrunData = IntPtr.Zero, worldData = IntPtr.Zero;
+
+		var token = vars.CancelSource.Token;
+		while (!token.IsCancellationRequested)
+		{
+			if ((speedrunData = scanPages(speedrunDataTrg)) != IntPtr.Zero)
+			{
+				vars.SpeedrunData.Add(new MemoryWatcher<int>(speedrunData + 0x0) { Name = "Level" });
+				vars.SpeedrunData.Add(new MemoryWatcher<bool>(speedrunData + 0x4) { Name = "End" });
+				vars.SpeedrunData.Add(new MemoryWatcher<bool>(speedrunData + 0x5) { Name = "Loading" });
+				vars.SpeedrunData.Add(new MemoryWatcher<bool>(speedrunData + 0x6) { Name = "GameStart" });
+				vars.SpeedrunData.Add(new MemoryWatcher<bool>(speedrunData + 0x7) { Name = "LevelStart" });
+
+				vars.Dbg("Found SpeedRunData at 0x" + speedrunData.ToString("X") + ".");
+				break;
+			}
+
+			vars.Dbg("SpeedRunData not initialized yet. Retrying.");
+			Thread.Sleep(2000);
+		}
+
+		while (!token.IsCancellationRequested)
+		{
+			var size = new DeepPointer("mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4D8).Deref<int>(game);
+			var class_cache = new DeepPointer("mono-2.0-bdwgc.dll", 0x49A0C8, 0x10, 0x1D0, 0x8, 0x4E0).Deref<IntPtr>(game);
+
+			for (int i = 0; i < size; ++i)
+			{
+				var klass = game.ReadPointer(class_cache + 0x8 * i);
+				for (; klass != IntPtr.Zero; klass = game.ReadPointer(klass + 0x108))
+				{
+					var class_name = new DeepPointer(klass + 0x48, 0x0).DerefString(game, 32);
+					if (string.IsNullOrEmpty(class_name)) break;
+					if (class_name != "scrWorldSaveDataContainer") continue;
+
+					vars.WorldDataPtr = worldData = new DeepPointer(klass + 0xD0, 0x8, 0x60).Deref<IntPtr>(game);
+					for (int offset = 0x20; offset <= 0x40; offset += 0x8)
+						vars.WorldData.Add(new MemoryWatcher<int>(new DeepPointer(worldData, offset, 0x18)) { Name = "0x" + offset.ToString("X") });
+
+					vars.Dbg("Found WorldSaveData at 0x" + worldData.ToString("X") + ".");
+					break;
+				}
+
+				if (worldData != IntPtr.Zero) break;
+			}
+
+			if (worldData != IntPtr.Zero)
+			{
+				vars.Dbg("All pointers found successfully.");
+				break;
+			}
+
+			vars.Dbg("Could not find WorldSaveData. Retrying.");
+			Thread.Sleep(2000);
+		}
+
+		vars.Dbg("Exiting scan thread.");
+	});
+
+	vars.ScanThread.Start();
 
 	vars.CompletedFlags = new List<string>();
-	vars.EndGame = false;
 }
 
 update
 {
-	vars.WorldDataWatchers.UpdateAll(game);
+	if (vars.SpeedrunData.Count == 0) return false;
+
+	vars.SpeedrunData.UpdateAll(game);
+	if (vars.WorldData.Count > 0) vars.WorldData.UpdateAll(game);
 }
 
 start
 {
-	if (old.Level != current.Level && current.Level == 0)
-	{
-		timer.Run.Offset = TimeSpan.FromSeconds(0.85);
-		return true;
-	}
+	return !vars.SpeedrunData["GameStart"].Old && vars.SpeedrunData["GameStart"].Current ||
+	       !vars.SpeedrunData["LevelStart"].Old && vars.SpeedrunData["LevelStart"].Current;
 }
 
 split
 {
-	if (old.Level != current.Level)
+	if (vars.SpeedrunData["Level"].Changed)
 	{
-		if (old.Level == 7) vars.EndGame = true;
-		return settings[old.Level + "_End"];
+		return settings[vars.SpeedrunData["Level"].Old + "_End"];
 	}
 
-	// if (vars.EndGame && old.EndScreenTimer == 0f && current.EndScreenTimer > 0f)
-	// {
-	// 	return true;
-	// }
+	if (!vars.SpeedrunData["End"].Old && vars.SpeedrunData["End"].Current)
+	{
+		return true;
+	}
 
-	bool split = false;
-	foreach (var watcher in vars.WorldDataWatchers)
+	if (vars.WorldData.Count == 0) return;
+
+	foreach (var watcher in vars.WorldData)
 	{
 		if (watcher.Old >= watcher.Current) continue;
 
 		int offset = Convert.ToInt32(watcher.Name, 16);
-		string newFlag = new DeepPointer((IntPtr)current.WorldDataPtr, offset, 0x10, 0x20 + 0x8 * (watcher.Current - 1), 0x14).DerefString(game, 64);
+		string newFlag = new DeepPointer((IntPtr)vars.WorldDataPtr, offset, 0x10, 0x20 + 0x8 * (watcher.Current - 1), 0x14).DerefString(game, 64);
 		newFlag = current.Level + "_" + newFlag;
 
 		vars.Dbg("Got flag " + newFlag);
-		if (!settings[newFlag] || vars.CompletedFlags.Contains(newFlag)) continue;
-
-		vars.CompletedFlags.Add(newFlag);
-		split = true;
+		if (!vars.CompletedFlags.Contains(newFlag))
+		{
+			vars.CompletedFlags.Add(newFlag);
+			return settings[newFlag];
+		}
 	}
-
-	return split;
 }
 
 reset
 {
-	return old.Level != current.Level && current.Level == 0;
+	return !vars.SpeedrunData["GameStart"].Old && vars.SpeedrunData["GameStart"].Current;
 }
 
 isLoading
 {
-	return current.Loading;
+	return vars.SpeedrunData["Loading"].Current;
+}
+
+exit
+{
+	vars.CancelSource.Cancel();
 }
 
 shutdown
 {
 	timer.OnStart -= vars.TimerStart;
+	vars.CancelSource.Cancel();
 }
