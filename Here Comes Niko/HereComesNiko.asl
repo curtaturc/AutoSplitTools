@@ -392,11 +392,13 @@ split
 {
 	if (vars.SpeedrunData["Level"].Changed)
 	{
+		vars.Dbg("Level changed from " + vars.SpeedrunData["Level"].Old + " to " + vars.SpeedrunData["Level"].Current + ".");
 		return settings[vars.SpeedrunData["Level"].Old + "_End"];
 	}
 
 	if (!vars.SpeedrunData["End"].Old && vars.SpeedrunData["End"].Current)
 	{
+		vars.Dbg("Split for end!");
 		return true;
 	}
 
@@ -408,7 +410,7 @@ split
 
 		int offset = Convert.ToInt32(watcher.Name, 16);
 		string newFlag = new DeepPointer((IntPtr)vars.WorldDataPtr, offset, 0x10, 0x20 + 0x8 * (watcher.Current - 1), 0x14).DerefString(game, 64);
-		newFlag = current.Level + "_" + newFlag;
+		newFlag = vars.SpeedrunData["Level"].Current + "_" + newFlag;
 
 		vars.Dbg("Got flag " + newFlag);
 		if (!vars.CompletedFlags.Contains(newFlag))
