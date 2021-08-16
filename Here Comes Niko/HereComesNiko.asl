@@ -390,7 +390,7 @@ start
 
 split
 {
-	if (vars.SpeedrunData["Level"].Changed)
+	if (vars.SpeedrunData["Level"].Changed && vars.SpeedrunData["Level"].Current != 1)
 	{
 		vars.Dbg("Level changed from " + vars.SpeedrunData["Level"].Old + " to " + vars.SpeedrunData["Level"].Current + ".");
 		return settings[vars.SpeedrunData["Level"].Old + "_End"];
