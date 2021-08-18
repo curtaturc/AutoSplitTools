@@ -268,14 +268,6 @@ startup
 		settings.Add(id, state, desc, parent);
 	}
 
-	vars.TimerStart = (EventHandler) ((s, e) =>
-	{
-		vars.CompletedFlags.Clear();
-		vars.EndGame = false;
-		timer.Run.Offset = TimeSpan.Zero;
-	});
-	timer.OnStart += vars.TimerStart;
-
 	if (timer.CurrentTimingMethod == TimingMethod.RealTime)
 	{
 		var mbox = MessageBox.Show(
@@ -289,6 +281,7 @@ startup
 
 init
 {
+	vars.OnStartPtr = IntPtr.Zero;
 	vars.SpeedrunData = new MemoryWatcherList();
 	vars.WorldData = new MemoryWatcherList();
 
@@ -322,6 +315,7 @@ init
 				vars.SpeedrunData.Add(new MemoryWatcher<bool>(speedrunData + 0x5) { Name = "Loading" });
 				vars.SpeedrunData.Add(new MemoryWatcher<bool>(speedrunData + 0x6) { Name = "GameStart" });
 				vars.SpeedrunData.Add(new MemoryWatcher<bool>(speedrunData + 0x7) { Name = "LevelStart" });
+				vars.OnStartPtr = speedrunData + 0x6;
 
 				vars.Dbg("Found SpeedRunData at 0x" + speedrunData.ToString("X") + ".");
 				break;
@@ -372,6 +366,15 @@ init
 	vars.ScanThread.Start();
 
 	vars.CompletedFlags = new List<string>();
+	vars.TimerStart = (EventHandler) ((s, e) =>
+	{
+		vars.CompletedFlags.Clear();
+		vars.EndGame = false;
+		timer.Run.Offset = TimeSpan.Zero;
+		if (vars.OnStartPtr != IntPtr.Zero)
+			game.WriteValue<bool>((IntPtr)vars.OnStartPtr, false);
+	});
+	timer.OnStart += vars.TimerStart;
 }
 
 update
@@ -433,6 +436,8 @@ isLoading
 
 exit
 {
+	vars.OnStartPtr = IntPtr.Zero;
+	timer.OnStart -= vars.TimerStart;
 	vars.CancelSource.Cancel();
 }
 
