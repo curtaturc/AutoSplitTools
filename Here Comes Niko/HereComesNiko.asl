@@ -231,6 +231,7 @@ startup
 			{ "thq_Coins", "7_cassetteCoin2", true, "Mai: trade 5 cassettes for a coin" },
 
 		{ "Tadpole HQ", "thq_Cassettes", false, "Cassettes" },
+			{ "thq_Cassettes", "7_Cassette (2)", false, "in a bush behind the bench with the contact list" },
 			{ "thq_Cassettes", "7_Cassette (4)", false, "in a tree near the first pond (soda can to shoot into it)" },
 			{ "thq_Cassettes", "7_Cassette (5)", false, "on top of the golden frog statue" },
 			{ "thq_Cassettes", "7_Cassette (6)", false, "in a breakable box behind the first buildings to the right" },
