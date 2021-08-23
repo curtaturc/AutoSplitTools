@@ -342,7 +342,7 @@ init
 
 					vars.WorldDataPtr = worldData = new DeepPointer(klass + 0xD0, 0x8, 0x60).Deref<IntPtr>(game);
 					for (int offset = 0x20; offset <= 0x40; offset += 0x8)
-						vars.WorldData.Add(new MemoryWatcher<int>(new DeepPointer(worldData, offset, 0x18)) { Name = "0x" + offset.ToString("X") });
+						vars.WorldData.Add(new MemoryWatcher<int>(new DeepPointer(worldData, offset, 0x18)) { Name = offset.ToString() });
 
 					vars.Dbg("Found WorldSaveData at 0x" + worldData.ToString("X") + ".");
 					break;
@@ -410,9 +410,9 @@ split
 
 	foreach (var watcher in vars.WorldData)
 	{
-		if (watcher.Old >= watcher.Current) continue;
+		if (watcher.Current != watcher.Old + 1) continue;
 
-		int offset = Convert.ToInt32(watcher.Name, 16);
+		int offset = int.Parse(watcher.Name);
 		string newFlag = new DeepPointer((IntPtr)vars.WorldDataPtr, offset, 0x10, 0x20 + 0x8 * (watcher.Current - 1), 0x14).DerefString(game, 64);
 		newFlag = vars.SpeedrunData["Level"].Current + "_" + newFlag;
 
