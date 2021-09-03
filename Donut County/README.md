@@ -1,7 +1,7 @@
 # Autosplitter for "Donut County"
 ## Information
 Starts the timer when starting any level.  
-Splits are available in the settings  
+Splits are available in the settings.  
 Does not reset the timer.
 
 ## Instructions
