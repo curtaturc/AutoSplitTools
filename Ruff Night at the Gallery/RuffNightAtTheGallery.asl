@@ -31,7 +31,6 @@ startup
 
 	vars.Stopwatch = new Stopwatch();
 	vars.CompletedRooms = new HashSet<string>();
-	vars.PrevLevel = "Room_Left_00";
 
 	vars.TimerStart = (EventHandler) ((s, e) => vars.CompletedRooms.Clear());
 	timer.OnStart += vars.TimerStart;
@@ -46,9 +45,6 @@ init
 update
 {
 	vars.Position.Update(game);
-
-	if (!string.IsNullOrEmpty(old.RoomID) && string.IsNullOrEmpty(current.RoomID))
-		vars.PrevLevel = old.RoomID;
 }
 
 start
@@ -59,15 +55,25 @@ start
 
 split
 {
-	if (string.IsNullOrEmpty(current.RoomID)) return;
+	if (string.IsNullOrEmpty(old.RoomID) || string.IsNullOrEmpty(current.RoomID)) return;
 
-	return old.RoomID != current.RoomID && settings[old.RoomID] ||
-	       old.FinalGateLocked && !current.FinalGateLocked;
+	if (old.RoomID != current.RoomID && !vars.CompletedRooms.Contains(old.RoomID))
+	{
+		vars.CompletedRooms.Add(old.RoomID);
+		return settings[old.RoomID];
+	}
+
+	return old.FinalGateLocked && !current.FinalGateLocked;
 }
 
 reset
 {
 	return string.IsNullOrEmpty(old.RoomID) && current.RoomID == "Room_Left_00";
+}
+
+isLoading
+{
+	return string.IsNullOrEmpty(current.RoomID);
 }
 
 shutdown
