@@ -1,73 +1,76 @@
 state("Nori-Win64-Shipping")
 {
-	int keys           : 0x3E5A530, 0x10F0;
-	byte1 mov          : 0x3E9EC28, 0x20, 0x240, 0x4C0, 0x14;
-	int challengesDone : 0x3EC3C98, 0xA0, 0xEF0, 0x18;
-	float xPos         : 0x3EE9668, 0x1790, 0x838;
-	float yPos         : 0x3EE9668, 0x1790, 0x83C;
-	//float zPos         : 0x3EE9668, 0x1790, 0x840;
+	// UWorld.Nori_GameInstance.SaveGame.CurrentRoomID
+	string32 RoomID          : 0x3F29F40, 0x188, 0x198, 0x28, 0x0;
+
+	// UWorld.PersistentLevel.UNKNOWN.Nori_LevelInfo.OrderedRoomNodes[14].RoomGate.Locked
+	bool     FinalGateLocked : 0x3F29F40, 0x30, 0x98, 0xB8, 0x238, 0x70, 0x268, 0x2A0;
 }
 
 startup
 {
-	var tB = (Func<float, float, float, float, Tuple<float, float, float, float>>) ((xMin, xMax, yMin, yMax) => Tuple.Create(xMin, xMax, yMin, yMax));
-
-	vars.parts = new Dictionary<string, Tuple<float, float, float, float>>
+	string[][] rooms =
 	{
-		{ "Mona Lisa",                                         tB( 2300f,  2450f, -211f, -201f) },
-		{ "American Gothic",                                   tB( 3300f,  3450f, -298f, -289f) },
-		{ "Self-Portrait with Thorn Necklace and Hummingbird", tB( 4280f,  4450f, 1690f, 1700f) },
-		{ "Girl before a Mirror",                              tB( 2210f,  2220f, 2300f, 2450f) },
-		{ "Room with 2 Portraits",                             tB(-3211f, -3201f,   50f,  200f) },
-		{ "Room with 3 Portraits",                             tB(-6270f, -6260f,  534f,  716f) },
-		{ "Room with 4 Portraits",                             tB(-2980f, -2970f, 1550f, 1700f) },
-		{ "The Son of Man",                                    tB( -325f,  -174f, 7770f, 7780f) },
-		{ "Enter Section 1",                                   tB( 1510f,  1520f,  192f,  308f) },
-		{ "Enter Section 2",                                   tB(-2010f, -2000f,  192f,  308f) },
-		{ "Enter Section 3",                                   tB( -308f,  -192f, 2490f, 2500f) }
+		new[] {    "Room_Left_00", "First Lobby" },
+		new[] {    "Room_Left_01", "Mona Lisa" },
+		new[] {    "Room_Left_02", "American Gothic" },
+		new[] {    "Room_Left_03", "Self-Portrait with Thorn Necklace and Hummingbird" },
+		new[] {    "Room_Left_04", "Girl before a Mirror" },
+		new[] {   "Room_Right_00", "Second Lobby" },
+		new[] {   "Room_Right_01", "Girl with a Pearl Earring & Self-Portrait (van Gogh)" },
+		new[] {   "Room_Right_02", "Girl before a Mirror, The Scream, & American Gothic" },
+		new[] {   "Room_Right_04", "Room with 4 Portraits" },
+		new[] {   "Room_Final_00", "Third Lobby" },
+		new[] {   "Room_Final_01", "The Son of Man" },
+		new[] { "Room_Credits_00", "Credits" }
 	};
 
-	settings.Add("sectionSplits", true, "Split on entering these gallery sections:");
-	foreach (var p in vars.parts)
-		if (p.Key.StartsWith("Enter"))
-			settings.Add(p.Key, (p.Key.Contains("1") ? false : true), p.Key, "sectionSplits");
+	settings.Add("splits", true, "Split upon leaving these rooms:");
+	foreach (var room in rooms)
+		settings.Add(room[0], true, room[1], "splits");
 
-	settings.Add("paintingSplits", false, "Split after finishing these painting sections:");
-	foreach (var p in vars.parts)
-		if (!p.Key.StartsWith("Enter"))
-			settings.Add(p.Key, false, p.Key, "paintingSplits");
+	vars.Stopwatch = new Stopwatch();
+	vars.CompletedRooms = new HashSet<string>();
+	vars.PrevLevel = "Room_Left_00";
 
-	vars.completedSections = new HashSet<string>();
+	vars.TimerStart = (EventHandler) ((s, e) => vars.CompletedRooms.Clear());
+	timer.OnStart += vars.TimerStart;
+}
+
+init
+{
+	// UWorld.PersistentLevel.UNKNOWN.ACharacter.RootComponent.AbsolutePosition
+	vars.Position = new MemoryWatcher<Vector3f>(new DeepPointer(0x3F29F40, 0x30, 0xA8, 0x68, 0x130, 0x100));
 }
 
 update
 {
-	vars.inPos = (Func<float, float, float, float, bool>) ((xMin, xMax, yMin, yMax) =>
-		current.xPos >= xMin && current.xPos <= xMax && current.yPos >= yMin && current.yPos <= yMax ? true : false
-	);
+	vars.Position.Update(game);
+
+	if (!string.IsNullOrEmpty(old.RoomID) && string.IsNullOrEmpty(current.RoomID))
+		vars.PrevLevel = old.RoomID;
 }
 
 start
 {
-	if (old.xPos != current.xPos && old.xPos == -250.0 ||
-	    old.yPos != current.yPos && old.yPos == -1900.0)
-	{
-		vars.completedSections.Clear();
-		vars.ending = false;
-		return true;
-	}
+	return vars.Position.Old.X ==  250f && vars.Position.Current.X !=  250f ||
+	       vars.Position.Old.Y == 1900f && vars.Position.Current.Y != 1900f;
 }
 
 split
 {
-	foreach (var p in vars.parts) {
-		if (vars.inPos(p.Value.Item1, p.Value.Item2, p.Value.Item3, p.Value.Item4) && !vars.completedSections.Contains(p.Key))
-		{
-			vars.completedSections.Add(p.Key);
-			return settings[p.Key];
-		}
-	}
+	if (string.IsNullOrEmpty(current.RoomID)) return;
 
-	vars.ending = vars.completedSections.Contains("The Son of Man") && current.challengesDone == old.challengesDone + 1;	
-	return vars.ending;
+	return old.RoomID != current.RoomID && settings[old.RoomID] ||
+	       old.FinalGateLocked && !current.FinalGateLocked;
+}
+
+reset
+{
+	return string.IsNullOrEmpty(old.RoomID) && current.RoomID == "Room_Left_00";
+}
+
+shutdown
+{
+	timer.OnStart -= vars.TimerStart;
 }
