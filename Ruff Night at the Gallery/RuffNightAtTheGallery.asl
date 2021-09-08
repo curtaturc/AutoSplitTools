@@ -1,11 +1,4 @@
-state("Nori-Win64-Shipping")
-{
-	// UWorld.Nori_GameInstance.SaveGame.CurrentRoomID
-	string32 RoomID          : 0x3F29F40, 0x188, 0x198, 0x28, 0x0;
-
-	// UWorld.PersistentLevel.UNKNOWN.Nori_LevelInfo.OrderedRoomNodes[14].RoomGate.Locked
-	bool     FinalGateLocked : 0x3F29F40, 0x30, 0x98, 0xB8, 0x238, 0x70, 0x268, 0x2A0;
-}
+state("Nori-Win64-Shipping") {}
 
 startup
 {
@@ -29,7 +22,6 @@ startup
 	foreach (var room in rooms)
 		settings.Add(room[0], true, room[1], "splits");
 
-	vars.Stopwatch = new Stopwatch();
 	vars.CompletedRooms = new HashSet<string>();
 
 	vars.TimerStart = (EventHandler) ((s, e) => vars.CompletedRooms.Clear());
@@ -40,11 +32,19 @@ init
 {
 	// UWorld.PersistentLevel.UNKNOWN.ACharacter.RootComponent.AbsolutePosition
 	vars.Position = new MemoryWatcher<Vector3f>(new DeepPointer(0x3F29F40, 0x30, 0xA8, 0x68, 0x130, 0x100));
+
+	// UWorld.Nori_GameInstance.SaveGame.CurrentRoomID
+	vars.RoomID = new StringWatcher(new DeepPointer(0x3F29F40, 0x188, 0x198, 0x28, 0x0), 32) { FailAction = MemoryWatcher.ReadFailAction.SetZeroOrNull };
+
+	// UWorld.PersistentLevel.UNKNOWN.Nori_LevelInfo.OrderedRoomNodes[14].RoomGate.Locked
+	vars.FinalGateLocked = new MemoryWatcher<bool>(new DeepPointer(0x3F29F40, 0x30, 0x98, 0xB8, 0x238, 0x70, 0x268, 0x2A0));
 }
 
 update
 {
 	vars.Position.Update(game);
+	vars.RoomID.Update(game);
+	vars.FinalGateLocked.Update(game);
 }
 
 start
@@ -55,25 +55,25 @@ start
 
 split
 {
-	if (string.IsNullOrEmpty(old.RoomID) || string.IsNullOrEmpty(current.RoomID)) return;
+	if (string.IsNullOrEmpty(vars.RoomID.Current)) return;
 
-	if (old.RoomID != current.RoomID && !vars.CompletedRooms.Contains(old.RoomID))
+	if (vars.RoomID.Changed && !vars.CompletedRooms.Contains(vars.RoomID.Old))
 	{
-		vars.CompletedRooms.Add(old.RoomID);
-		return settings[old.RoomID];
+		vars.CompletedRooms.Add(vars.RoomID.Old);
+		return settings[vars.RoomID.Old];
 	}
 
-	return old.FinalGateLocked && !current.FinalGateLocked;
+	return vars.FinalGateLocked.Old && !vars.FinalGateLocked.Current;
 }
 
 reset
 {
-	return string.IsNullOrEmpty(old.RoomID) && current.RoomID == "Room_Left_00";
+	return string.IsNullOrEmpty(vars.RoomID.Old) && vars.RoomID.Current == "Room_Left_00";
 }
 
 isLoading
 {
-	return string.IsNullOrEmpty(current.RoomID);
+	return string.IsNullOrEmpty(vars.RoomID.Current);
 }
 
 shutdown
