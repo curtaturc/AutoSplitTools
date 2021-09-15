@@ -1,116 +1,111 @@
-state("LightmatterSub")
-{
-	long EventLogCheck : "mono-2.0-bdwgc.dll", 0x490A68, 0x50, 0x180, 0x0, 0xF8, 0x88;
-}
+state("LightmatterSub") {}
 
 startup
 {
+	vars.Dbg = (Action<dynamic>) ((output) => print("[Lightmatter ASL] " + output));
+
 	settings.Add("ilTime", false, "Individual Level timer behavior (hover for info)");
-	settings.SetToolTip("ilTime", "Restarts the timer when pressing \'RETRY\'\nSyncs to in-game time (set LiveSplit comparison to \'Game Time\')");
-	settings.Add("pushSplits", false, "Split whenever pressing a button/flipping a lever", "ilTime");
-	settings.Add("showVO", false, "Display the current Voice Over", "ilTime");
-
-	string[,] SettingsArray =
-	{
-		{ "Level 2", "Start_Unbelievable", "Unbelievable!" }
-	};
-
-	for (int i = 0; i < SettingsArray.GetLength(0); ++i)
-	{
-		string parent = SettingsArray[i, 0];
-		string id     = SettingsArray[i, 1];
-		string desc   = SettingsArray[i, 2];
-
-		try { settings.Add(parent, false, "Split on new voice over in " + parent + ":", "ilTime"); } catch {}
-		settings.Add(id, false, desc, parent);
-	}
-
-	vars.VOFromPath = (Func<string, string>) ((path) =>
-	{
-		if (String.IsNullOrEmpty(path)) return "None";
-		else return path.Substring(path.LastIndexOf('/') + 1);
-	});
 }
 
 init
 {
-	#region Finding Pointers
-	IntPtr Player_Common = IntPtr.Zero, EventLogManager = IntPtr.Zero, FMod = IntPtr.Zero;
-
-	var Timeout = new Stopwatch();
-	vars.PtrsFound = false;
-
-	Timeout.Start();
-	while (!vars.PtrsFound)
+	var CLASSES = new Dictionary<string, Tuple<uint, int>>
 	{
-		new DeepPointer("fmodstudio.dll", 0x2B3CF0, 0x110, 0x10, 0x0, 0x28).DerefOffsets(game, out FMod);
-		new DeepPointer("mono-2.0-bdwgc.dll", 0x490A68, 0x50, 0x140, 0x0).DerefOffsets(game, out Player_Common);
-		new DeepPointer("mono-2.0-bdwgc.dll", 0x490A68, 0x50, 0x180, 0x0, 0xF8, 0x0).DerefOffsets(game, out EventLogManager);
+		{ "Player_Manager", Tuple.Create((uint)(0x20001D2), 0xD0) },
+		{ "EventLogManager", Tuple.Create((uint)(0x20000BB), 0x60) }
+	};
 
-		vars.PtrsFound = new[] { Player_Common, EventLogManager, FMod }.All(x => x != IntPtr.Zero);
-		if (Timeout.ElapsedMilliseconds >= 15000) break;
-	}
-	Timeout.Reset();
-
-	if (!vars.PtrsFound)
+	vars.CancelSource = new CancellationTokenSource();
+	vars.MonoThread = new Thread(() =>
 	{
-		MessageBox.Show(
-			"Pointer scan timed out!\n" +
-			"Please contact Ero#1111 on Discord.",
-			"Lightmatter Autosplitter");
-	}
-	else
-	{
-		vars.StartVal = new MemoryWatcher<int>(FMod);
-		vars.LevelID = new MemoryWatcher<int>(new DeepPointer(Player_Common + 0x58, 0xA0));
-		vars.MovSpeed = new MemoryWatcher<float>(Player_Common + 0x168);
-		vars.LvlTime = new MemoryWatcher<float>(EventLogManager + 0x0);
-		vars.TotalTime = new MemoryWatcher<float>(EventLogManager + 0x4);
-		vars.VOPath = new StringWatcher(new DeepPointer(EventLogManager + 0x18, 0x14), 256);
-		vars.PushCount = new MemoryWatcher<int>(EventLogManager + 0x40);
+		vars.Dbg("Starting mono thread.");
 
-		vars.Watchers = new MemoryWatcherList { vars.StartVal, vars.LevelID, vars.MovSpeed, vars.LvlTime, vars.TotalTime, vars.VOPath, vars.PushCount };
-	}
-	#endregion
+		IntPtr class_cache = IntPtr.Zero;
+		int class_count = 0;
+
+		var token = vars.CancelSource.Token;
+		while (!token.IsCancellationRequested)
+		{
+			if (game.ModulesWow64Safe().FirstOrDefault(m => m.ModuleName == "mono-2.0-bdwgc.dll") != null)
+			{
+				class_count = new DeepPointer("mono-2.0-bdwgc.dll", 0x4950C0, 0x10, 0x1D0, 0x8, 0x4D8).Deref<int>(game);
+				class_cache = new DeepPointer("mono-2.0-bdwgc.dll", 0x4950C0, 0x10, 0x1D0, 0x8, 0x4E0).Deref<IntPtr>(game);
+
+				if (class_count != 0)
+					break;
+			}
+
+			vars.Dbg("Mono module not found.");
+			Thread.Sleep(2000);
+		}
+
+		vars.Mono = new Dictionary<string, IntPtr>();
+
+		while (!token.IsCancellationRequested)
+		{
+			foreach (var entry in CLASSES)
+			{
+				var klass = game.ReadPointer(class_cache + 0x8 * (int)(entry.Value.Item1 % class_count));
+				for (; klass != IntPtr.Zero; klass = game.ReadPointer(klass + 0x108))
+				{
+					string class_name = new DeepPointer(klass + 0x48, 0x0).DerefString(game, 32);
+					if (class_name != entry.Key)
+						continue;
+
+					vars.Mono[class_name] = new DeepPointer(klass + 0xD0, 0x8, entry.Value.Item2).Deref<IntPtr>(game);
+					vars.Dbg("Found " + class_name + ".");
+				}
+			}
+
+			if (vars.Mono.Count == CLASSES.Count)
+				break;
+
+			vars.Dbg("Not all classes found.");
+			Thread.Sleep(5000);
+		}
+
+		vars.Dbg("Exiting mono thread.");
+	});
+
+	vars.MonoThread.Start();
 }
 
 update
 {
-	if (!vars.PtrsFound) return false;
+	if (vars.MonoThread.IsAlive) return false;
 
-	if (current.EventLogCheck == 0) return;
-	vars.Watchers.UpdateAll(game);
+	Dictionary<string, IntPtr> mono = vars.Mono;
 
-	current.VoiceOver = vars.VOFromPath(vars.VOPath.Current);
+	current.MovSpeed = new DeepPointer(mono["Player_Manager"], 0x40, 0x168).Deref<float>(game);
+	current.Level = new DeepPointer(mono["Player_Manager"], 0x80, 0xA0).Deref<int>(game);
+	current.LevelTime = game.ReadValue<float>(mono["EventLogManager"] + 0x0);
+	current.GameTime = game.ReadValue<float>(mono["EventLogManager"] + 0x4);
+	current.BtnCount = game.ReadValue<int>(mono["EventLogManager"] + 0x40);
 }
 
 start
 {
 	if (settings["ilTime"])
 	{
-		return vars.LvlTime.Old > vars.LvlTime.Current && vars.LevelID.Old == vars.LevelID.Current;
+		return old.LevelTime > current.LevelTime && old.Level == current.Level;
 	}
 	else
 	{
-		return vars.StartVal.Old == 3 && vars.StartVal.Current == 2 && vars.LevelID.Current == 0;
+		return old.GameTime == 0f && current.GameTime > 0f && current.Level == 0;
 	}
 }
 
 split
 {
-	bool transitionedLevel = vars.LevelID.Current == vars.LevelID.Old + 1 && vars.LevelID.Current <= 37;
+	bool transitionedLevel = current.Level == old.Level + 1 && current.Level <= 37;
 
 	if (settings["ilTime"])
 	{
-		bool newPush = vars.PushCount.Current == vars.PushCount.Old + 1 && settings["pushSplits"];
-		bool newVO = old.VoiceOver != current.VoiceOver && !String.IsNullOrEmpty(current.VoiceOver) && settings[current.VoiceOver];
-		bool newLevel = vars.LvlTime.Old > vars.LvlTime.Current && transitionedLevel;
-
-		return newLevel || newPush || newVO;
+		return old.LevelTime > current.LevelTime && transitionedLevel;
 	}
 	else
 	{
-		bool pressedInFinalRoom = vars.MovSpeed.Current == 0.3f && current.Level == 37 && vars.PushCount.Current == vars.PushCount.Old + 1;
+		bool pressedInFinalRoom = current.BtnCount == old.BtnCount + 1 && current.MovSpeed == 0.3f && current.Level == 37;
 
 		return transitionedLevel || pressedInFinalRoom;
 	}
@@ -118,9 +113,9 @@ split
 
 reset
 {
-	bool returnToLvl1 = vars.LevelID.Old != 0 && vars.LevelID.Current == 0;
-	bool returnToMenu = vars.LevelID.Current == 0 && vars.StartVal.Old == 2 && vars.StartVal.Current == 3;
-	bool timeResetSameLevel = vars.LvlTime.Old > vars.LvlTime.Current && vars.LevelID.Old == vars.LevelID.Current;
+	bool returnToLvl1 = old.Level != 0 && current.Level == 0;
+	bool returnToMenu = current.Level == 0 && old.GameTime > 0f && current.GameTime == 0f;
+	bool timeResetSameLevel = old.LevelTime > current.LevelTime && old.Level == current.Level;
 
 	return returnToLvl1 || returnToMenu || timeResetSameLevel && settings["ilTime"];
 }
@@ -129,17 +124,27 @@ gameTime
 {
 	if (settings["ilTime"])
 	{
-		if (vars.LvlTime.Current >= 0.01f)
-			return TimeSpan.FromSeconds(vars.LvlTime.Current);
+		if (current.LevelTime >= 0.01f)
+			return TimeSpan.FromSeconds(current.LevelTime);
 	}
 	else
 	{
-		if (vars.TotalTime.Current >= 0.01f)
-			return TimeSpan.FromSeconds(vars.TotalTime.Current);
+		if (current.GameTime >= 0.01f)
+			return TimeSpan.FromSeconds(current.GameTime);
 	}
 }
 
 isLoading
 {
 	return true;
+}
+
+exit
+{
+	vars.CancelSource.Cancel();
+}
+
+shutdown
+{
+	vars.CancelSource.Cancel();
 }
