@@ -24,6 +24,7 @@ startup
 		settings.Add("Enchanté Jean", false);
 		settings.Add("Enchanté Léon", false);
 
+	settings.CurrentDefaultParent = null;
 	settings.Add("Tourist");
 	settings.CurrentDefaultParent = "Tourist";
 		settings.Add("The viewpoint", false);
@@ -32,10 +33,12 @@ startup
 		settings.Add("The picnic area", false);
 		settings.Add("The main plaza", false);
 
+	settings.CurrentDefaultParent = null;
 	settings.Add("Fear of silence");
 	settings.CurrentDefaultParent = "Fear of silence";
 		settings.Add("Montélimace FM", false);
 
+	settings.CurrentDefaultParent = null;
 	settings.Add("Philatelist");
 	settings.CurrentDefaultParent = "Philatelist";
 		settings.Add("Only 9 left!", false);
@@ -124,11 +127,23 @@ split
 	foreach (MemoryWatcher<bool> watcher in vars.Achievements)
 	{
 		if (!watcher.Old && watcher.Current && settings[watcher.Name])
+		{
+			vars.Dbg("split for watcher: " + watcher.Name);
 			return true;
+		}
 	}
 
-	return old.Day < current.Day && settings["day"] ||
-	       old.Dialogue == "Player.Dialogue.EndGameCutScene" && string.IsNullOrEmpty(current.Dialogue);;
+	if (old.Day < current.Day && settings["day"])
+	{
+		vars.Dbg("split for day: " + old.Day + " -> " + current.Day);
+		return true;
+	}
+
+	if (old.Dialogue == "Player.Dialogue.EndGameCutScene" && string.IsNullOrEmpty(current.Dialogue))
+	{
+		vars.Dbg("split for end?");
+		return true;
+	}
 }
 
 reset
