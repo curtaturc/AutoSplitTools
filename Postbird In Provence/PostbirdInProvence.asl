@@ -119,10 +119,6 @@ start
 
 split
 {
-	vars.Dbg(current.Day);
-	if (old.Day < current.Day && settings["day"])
-		return true;
-
 	vars.Achievements.UpdateAll(game);
 
 	foreach (MemoryWatcher<bool> watcher in vars.Achievements)
@@ -130,6 +126,9 @@ split
 		if (!watcher.Old && watcher.Current && settings[watcher.Name])
 			return true;
 	}
+
+	return old.Day < current.Day && settings["day"] ||
+	       old.Dialogue == "Player.Dialogue.EndGameCutScene" && string.IsNullOrEmpty(current.Dialogue);;
 }
 
 reset
