@@ -1,8 +1,8 @@
 state("ActionSquad")
 {
 	double LevelRunTime : 0x38C8C0;
-	int LevelEndTime    : 0x38E5A0;
 	int LevelState      : 0x38D2AC;
+	int LevelEndTime    : 0x38E5A0;
 
 	int Chapter         : 0x281758;
 	int Level           : 0x38D2C0;
@@ -113,7 +113,21 @@ startup
 			{ "ch7",  "ch6lvl8",  "7.9: Leap of Faith" },
 			{ "ch7",  "ch6lvl9", "7.10: Under Pressure" },
 			{ "ch7", "ch6lvl10", "7.11: Monty Hall" },
-			{ "ch7", "ch6lvl11", "7.12: No Excuse" }
+			{ "ch7", "ch6lvl11", "7.12: No Excuse" },
+
+		{ "", "ch8", "Chapter 8:" },
+			{ "ch8",  "ch7lvl0",  "8.1: Abandoned Mines" },
+			{ "ch8",  "ch7lvl1",  "8.2: Fare Well" },
+			{ "ch8",  "ch7lvl2",  "8.3: Wrong Way" },
+			{ "ch8",  "ch7lvl3",  "8.4: The Serai Abduction" },
+			{ "ch8",  "ch7lvl4",  "8.5: Get Out" },
+			{ "ch8",  "ch7lvl5",  "8.6: Out of Time" },
+			{ "ch8",  "ch7lvl6",  "8.7: Airborne Menace" },
+			{ "ch8",  "ch7lvl7",  "8.8: Queen of her Castle" },
+			{ "ch8",  "ch7lvl8",  "8.9: Sunken Stronghold" },
+			{ "ch8",  "ch7lvl9", "8.10: Burj Al Tarab" },
+			{ "ch8", "ch7lvl10", "8.11: Underground Threat" },
+			{ "ch8", "ch7lvl11", "8.12: Castle Summit" }
 	};
 
 	settings.Add("leveled", true, "Split whenever a level is completed (3 stars not required)");
