@@ -9,12 +9,22 @@ startup
 	{
 		{ 1, "Longling Tomb" },
 		{ 2, "Anxi Desert" },
-		{ 3, "Duo Fjord" }
+		{ 3, "Duo Fjord" },
+		{ 4, "Hyperborean" }
 	};
-
+	int max = 5;
 	for (int stageID = 1; stageID <= Stages.Count; ++stageID)
 	{
-		int max = stageID == 1 ? 5 : 4;
+	
+		if(stageID == 1)
+			max = 5;
+		else if(stageID == 2)
+			max = 4;
+		else if(stageID == 3)
+			max = 4;
+		else if  (stageID == 4)
+			max = 3;
+		
 
 		settings.Add("layer" + stageID, true, "Split after completing a stage in " + Stages[stageID] + ":");
 
@@ -24,12 +34,13 @@ startup
 				settings.Add(stageID + "-0to" + stageID + "-1", false, Stages[stageID] + " Entrance", "layer" + stageID);
 			else if (levelID > 0 && levelID < max)
 				settings.Add(stageID + "-" + levelID + "to" + stageID + "-" + (levelID + 1), true, "Stage " + levelID, "layer" + stageID);
-			else if (stageID != 3 && levelID == max)
+			else if (levelID == max && stageID != 4)
 				settings.Add(stageID + "-" + levelID + "to" + (stageID + 1) + "-0", true, Stages[stageID] + " Boss", "layer" + stageID);
+		
 		}
 	}
 
-	settings.Add("finalSplit", true, "Duo Fjord Boss", "layer3");
+	settings.Add("finalSplit", true, "Hyperborean Boss", "layer4");
 
 	if (timer.CurrentTimingMethod == TimingMethod.RealTime)
 	{
@@ -84,7 +95,7 @@ update
 	current.IsInWar = vars.Watchers["InWar"].Current;
 	current.HalfTime = vars.Watchers["Time"].Current;
 
-	if (!(current.Layer == 3 && current.Level == 4) && old.IsInWar && !current.IsInWar)
+	if (!(current.Layer == 4 && current.Level == 3) && old.IsInWar && !current.IsInWar)
 		vars.TimerModel.Pause();
 }
 
@@ -95,7 +106,7 @@ start
 
 split
 {
-	bool finalSplit = current.Layer == 3 && current.Level == 4 && old.IsInWar && !current.IsInWar && old.HalfTime == current.HalfTime;
+	bool finalSplit = current.Layer == 4 && current.Level == 3 && old.IsInWar && !current.IsInWar && old.HalfTime == current.HalfTime;
 
 	return old.Level != current.Level && settings[old.Layer + "-" + old.Level + "to" + current.Layer + "-" + current.Level] ||
 	       finalSplit &&settings["finalSplit"];
